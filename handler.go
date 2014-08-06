@@ -1,17 +1,48 @@
 package glogger
 
 import (
+	"container/list"
 	"io"
 	"os"
 	"sync"
 )
 
 type Handler interface {
-	Handle(rec *Record)
+	GetMutex() *sync.Mutex
+	Emit(log string)
+	SetFormatter(fmt Formatter)
+	Format(rec *Record) string
+}
+
+type HandlerGroup struct {
+	FilterGroup
+	Level    LogLevel
+	Handlers *list.List
+}
+
+func (hg *HandlerGroup) AddHandler(h Handler) {
+	if hg.Handlers == nil {
+		hg.Handlers = list.New()
+	}
+	hg.Handlers.PushBack(h)
+}
+
+func (hg *HandlerGroup) Handle(rec *Record) {
+	if rec.Level < hg.Level || !hg.DoFilter(rec) || hg.Handlers == nil {
+		return
+	}
+	for e := hg.Handlers.Front(); e != nil; e = e.Next() {
+		var h Handler = e.Value.(Handler)
+		func() {
+			h.GetMutex().Lock()
+			defer h.GetMutex().Unlock()
+			log := h.Format(rec)
+			h.Emit(log)
+		}()
+	}
 }
 
 type GenericHandler struct {
-	Filterer
 	Fmter Formatter
 	mu    sync.Mutex
 }
@@ -20,17 +51,12 @@ func (gh *GenericHandler) Format(rec *Record) string {
 	return gh.Fmter.Format(rec)
 }
 
-func (gd *GenericHandler) Emit(text string) {
+func (gh *GenericHandler) GetMutex() *sync.Mutex {
+	return &(gh.mu)
 }
 
-func (gh *GenericHandler) Handle(rec *Record) {
-	if !gh.Filter(rec) {
-		return
-	}
-	gh.mu.Lock()
-	defer gh.mu.Unlock()
-	text := gh.Format(rec)
-	gh.Emit(text)
+func (gh *GenericHandler) SetFormatter(fmt Formatter) {
+	gh.Fmter = fmt
 }
 
 type StreamHandler struct {
@@ -52,12 +78,27 @@ func (sh *StreamHandler) Emit(text string) {
 	sh.Writer.Write([]byte(text + "\n"))
 }
 
-func (sh *StreamHandler) Handle(rec *Record) {
-	if !sh.Filter(rec) {
-		return
+type FileHandler struct {
+	StreamHandler
+	FileName string
+	Flag     int
+	Pem      os.FileMode
+}
+
+func NewFileHandler(fileName string, flag int, pem os.FileMode) *FileHandler {
+	fh := &FileHandler{
+		FileName: fileName,
+		Flag:     flag,
+		Pem:      pem,
 	}
-	sh.mu.Lock()
-	defer sh.mu.Unlock()
-	text := sh.Format(rec)
-	sh.Emit(text)
+	fh.Fmter = NewDefaultFormatter("")
+	return fh
+}
+
+func (fh *FileHandler) Emit(text string) {
+	if fh.Writer == nil {
+		file, _ := os.OpenFile(fh.FileName, fh.Flag, fh.Pem)
+		fh.Writer = file
+	}
+	fh.StreamHandler.Emit(text)
 }
