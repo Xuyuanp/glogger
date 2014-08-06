@@ -77,3 +77,28 @@ func NewStreamHandler(w io.Writer) *StreamHandler {
 func (sh *StreamHandler) Emit(text string) {
 	sh.Writer.Write([]byte(text + "\n"))
 }
+
+type FileHandler struct {
+	StreamHandler
+	FileName string
+	Flag     int
+	Pem      os.FileMode
+}
+
+func NewFileHandler(fileName string, flag int, pem os.FileMode) *FileHandler {
+	fh := &FileHandler{
+		FileName: fileName,
+		Flag:     flag,
+		Pem:      pem,
+	}
+	fh.Fmter = NewDefaultFormatter("")
+	return fh
+}
+
+func (fh *FileHandler) Emit(text string) {
+	if fh.Writer == nil {
+		file, _ := os.OpenFile(fh.FileName, fh.Flag, fh.Pem)
+		fh.Writer = file
+	}
+	fh.StreamHandler.Emit(text)
+}
