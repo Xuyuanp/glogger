@@ -3,10 +3,10 @@ package glogger
 import "fmt"
 
 var LevelMap = map[LogLevel]string{
-	DebugLevel:    "DEBUG",
+	DebugLevel:    "DBUG",
 	InfoLevel:     "INFO",
-	WarnLevel:     "WARNING",
-	CriticalLevel: "CRITICAL",
+	WarnLevel:     "WARN",
+	CriticalLevel: "CRIT",
 }
 
 type Formatter interface {
