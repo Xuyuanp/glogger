@@ -1,30 +1,29 @@
 package glogger
 
-type Filterer struct {
-	children []*Filterer
+import "container/list"
+
+type Filter interface {
+	DoFilter(rec *Record) bool
 }
 
-func (f *Filterer) AddChild(child *Filterer) {
-	if f.children == nil {
-		f.children = make([]*Filterer, 5)
-	}
-	f.children = append(f.children, child)
+type FilterGroup struct {
+	filters *list.List
 }
 
-func (f *Filterer) RemoveChild(child *Filterer) {
-	if f.children == nil {
-		f.children = make([]*Filterer, 5)
+func (f *FilterGroup) AddFilter(ft Filter) {
+	if f.filters == nil {
+		f.filters = list.New()
 	}
-	for i, ch := range f.children {
-		if ch == child {
-			f.children = append(f.children[:i], f.children[i+1:]...)
-		}
-	}
+	f.filters.PushBack(ft)
 }
 
-func (f *Filterer) Filter(rec *Record) bool {
-	for _, child := range f.children {
-		if !child.Filter(rec) {
+func (f *FilterGroup) DoFilter(rec *Record) bool {
+	if f.filters == nil {
+		return true
+	}
+	for e := f.filters.Front(); e != nil; e = e.Next() {
+		filter := e.Value.(Filter)
+		if !filter.DoFilter(rec) {
 			return false
 		}
 	}
