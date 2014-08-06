@@ -42,7 +42,7 @@ func (l *Logger) log(level LogLevel, msg string) {
 		file = "???"
 		line = 0
 	}
-	rec := NewRecord(now, level, file, line, msg)
+	rec := NewRecord(l.Name, now, level, file, line, msg)
 	if !l.DoFilter(rec) {
 		return
 	}

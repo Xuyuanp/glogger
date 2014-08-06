@@ -19,7 +19,7 @@ type DefaultFormatter struct {
 
 func NewDefaultFormatter(format string) Formatter {
 	if format == "" {
-		format = "[%s\t%s\t%s\t:%d] %s"
+		format = "[%s\t%s\t%s\t%s\t:%d] %s"
 	}
 	df := &DefaultFormatter{
 		Fmt: format,
@@ -29,5 +29,5 @@ func NewDefaultFormatter(format string) Formatter {
 
 func (df *DefaultFormatter) Format(rec *Record) string {
 	levelName, _ := LevelMap[rec.Level]
-	return fmt.Sprintf(df.Fmt, rec.Time, levelName, rec.File, rec.Line, rec.Message)
+	return fmt.Sprintf(df.Fmt, rec.Name, rec.Time, levelName, rec.File, rec.Line, rec.Message)
 }
