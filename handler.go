@@ -8,15 +8,15 @@ import (
 )
 
 type Handler interface {
-	GetMutex() *sync.Mutex
+	Filter
 	Emit(log string)
-	SetFormatter(fmt Formatter)
 	Format(rec *Record) string
+	GetLevel() LogLevel
+	GetMutex() *sync.Mutex
+	GetName() string
 }
 
 type HandlerGroup struct {
-	FilterGroup
-	Level    LogLevel
 	Handlers *list.List
 }
 
@@ -28,12 +28,15 @@ func (hg *HandlerGroup) AddHandler(h Handler) {
 }
 
 func (hg *HandlerGroup) Handle(rec *Record) {
-	if rec.Level < hg.Level || !hg.DoFilter(rec) || hg.Handlers == nil {
+	if hg.Handlers == nil {
 		return
 	}
 	for e := hg.Handlers.Front(); e != nil; e = e.Next() {
 		var h Handler = e.Value.(Handler)
 		func() {
+			if !h.DoFilter(rec) {
+				return
+			}
 			h.GetMutex().Lock()
 			defer h.GetMutex().Unlock()
 			log := h.Format(rec)
@@ -43,34 +46,52 @@ func (hg *HandlerGroup) Handle(rec *Record) {
 }
 
 type GenericHandler struct {
-	Fmter Formatter
-	mu    sync.Mutex
+	FilterGroup
+	level     LogLevel
+	name      string
+	formatter Formatter
+	mu        sync.Mutex
+}
+
+func NewHandler(name string, level LogLevel, formatter Formatter) *GenericHandler {
+	gh := &GenericHandler{
+		name:      name,
+		level:     level,
+		formatter: formatter,
+	}
+	gh.AddFilter(NewLevelFilter(level))
+	return gh
 }
 
 func (gh *GenericHandler) Format(rec *Record) string {
-	return gh.Fmter.Format(rec)
+	return gh.formatter.Format(rec)
+}
+
+func (gh *GenericHandler) GetLevel() LogLevel {
+	return gh.level
 }
 
 func (gh *GenericHandler) GetMutex() *sync.Mutex {
 	return &(gh.mu)
 }
 
-func (gh *GenericHandler) SetFormatter(fmt Formatter) {
-	gh.Fmter = fmt
+func (gh *GenericHandler) GetName() string {
+	return gh.name
 }
 
 type StreamHandler struct {
-	GenericHandler
+	*GenericHandler
 	Writer io.Writer
 }
 
-func NewStreamHandler(w io.Writer) *StreamHandler {
+func NewStreamHandler(name string, level LogLevel, formatter Formatter, w io.Writer) *StreamHandler {
 	if w == nil {
-		w = os.Stderr
+		panic(w)
 	}
-	sh := new(StreamHandler)
-	sh.Writer = w
-	sh.Fmter = NewDefaultFormatter("")
+	sh := &StreamHandler{
+		GenericHandler: NewHandler(name, level, formatter),
+		Writer:         w,
+	}
 	return sh
 }
 
@@ -79,26 +100,26 @@ func (sh *StreamHandler) Emit(text string) {
 }
 
 type FileHandler struct {
-	StreamHandler
+	*StreamHandler
 	FileName string
 	Flag     int
 	Pem      os.FileMode
 }
 
-func NewFileHandler(fileName string, flag int, pem os.FileMode) *FileHandler {
-	fh := &FileHandler{
-		FileName: fileName,
-		Flag:     flag,
-		Pem:      pem,
+func NewFileHandler(name string, level LogLevel, formatter Formatter, fileName string, flag int, pem os.FileMode) *FileHandler {
+	file, err := os.OpenFile(fileName, flag, pem)
+	if err != nil {
+		panic(err)
 	}
-	fh.Fmter = NewDefaultFormatter("")
+	fh := &FileHandler{
+		StreamHandler: NewStreamHandler(name, level, formatter, file),
+		FileName:      fileName,
+		Flag:          flag,
+		Pem:           pem,
+	}
 	return fh
 }
 
 func (fh *FileHandler) Emit(text string) {
-	if fh.Writer == nil {
-		file, _ := os.OpenFile(fh.FileName, fh.Flag, fh.Pem)
-		fh.Writer = file
-	}
 	fh.StreamHandler.Emit(text)
 }
