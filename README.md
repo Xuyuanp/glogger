@@ -1,4 +1,4 @@
 glogger
 =======
 
-A python-like logging library of go
+A python-like logging library for go
