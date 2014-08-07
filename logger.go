@@ -50,3 +50,19 @@ func (l *Logger) log(level LogLevel, msg string) {
 func (l *Logger) Info(f string, v ...interface{}) {
 	l.log(InfoLevel, fmt.Sprintf(f, v...))
 }
+
+func (l *Logger) Debug(f string, v ...interface{}) {
+	l.log(DebugLevel, fmt.Sprintf(f, v...))
+}
+
+func (l *Logger) Warning(f string, v ...interface{}) {
+	l.log(WarnLevel, fmt.Sprintf(f, v...))
+}
+
+func (l *Logger) Error(f string, v ...interface{}) {
+	l.log(ErrorLevel, fmt.Sprintf(f, v...))
+}
+
+func (l *Logger) Critical(f string, v ...interface{}) {
+	l.log(CriticalLevel, fmt.Sprintf(f, v...))
+}
