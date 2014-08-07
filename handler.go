@@ -36,22 +36,22 @@ type Handler interface {
 	GetName() string
 }
 
-type HandlerGroup struct {
+type GroupHandler struct {
 	Handlers *list.List
 }
 
-func (hg *HandlerGroup) AddHandler(h Handler) {
-	if hg.Handlers == nil {
-		hg.Handlers = list.New()
+func (gh *GroupHandler) AddHandler(h Handler) {
+	if gh.Handlers == nil {
+		gh.Handlers = list.New()
 	}
-	hg.Handlers.PushBack(h)
+	gh.Handlers.PushBack(h)
 }
 
-func (hg *HandlerGroup) Handle(rec *Record) {
-	if hg.Handlers == nil {
+func (gh *GroupHandler) Handle(rec *Record) {
+	if gh.Handlers == nil {
 		return
 	}
-	for e := hg.Handlers.Front(); e != nil; e = e.Next() {
+	for e := gh.Handlers.Front(); e != nil; e = e.Next() {
 		var h Handler = e.Value.(Handler)
 		func() {
 			if !h.DoFilter(rec) {
@@ -68,7 +68,7 @@ func (hg *HandlerGroup) Handle(rec *Record) {
 // GenericHandler is an abstract struct which fully implemented Handler interface
 // expected Emit method.
 type GenericHandler struct {
-	FilterGroup
+	GroupFilter
 	level     LogLevel
 	name      string
 	formatter Formatter
