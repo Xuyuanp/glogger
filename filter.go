@@ -57,5 +57,5 @@ func NewLevelFilter(level LogLevel) *LevelFilter {
 }
 
 func (lf *LevelFilter) DoFilter(rec *Record) bool {
-	return lf.Level < rec.Level
+	return lf.Level <= rec.Level
 }

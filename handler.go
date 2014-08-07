@@ -18,8 +18,12 @@ package glogger
 
 import (
 	"container/list"
+	"encoding/base64"
+	"fmt"
 	"io"
+	"net/smtp"
 	"os"
+	"strings"
 	"sync"
 )
 
@@ -140,4 +144,55 @@ func NewFileHandler(name string, level LogLevel, formatter Formatter, fileName s
 
 func (fh *FileHandler) Emit(text string) {
 	fh.StreamHandler.Emit(text)
+}
+
+type SmtpHandler struct {
+	*GenericHandler
+	Host    string
+	Port    int
+	From    string
+	To      []string
+	Auth    smtp.Auth
+	Subject string
+}
+
+func NewSmtpHandler(name string, level LogLevel, formatter Formatter, host string, port int, from string, to []string, auth smtp.Auth, subject string) *SmtpHandler {
+	sh := &SmtpHandler{
+		GenericHandler: NewHandler(name, level, formatter),
+		Host:           host,
+		Port:           port,
+		From:           from,
+		To:             to,
+		Auth:           auth,
+		Subject:        subject,
+	}
+	return sh
+}
+
+func (sh *SmtpHandler) Emit(text string) {
+	header := make(map[string]string)
+	header["From"] = sh.From
+	header["To"] = strings.Join(sh.To, ";")
+	header["Subject"] = sh.Subject
+	header["MIME-Version"] = "1.0"
+	header["Content-Type"] = "text/plain; charset=\"utf-8\""
+	header["Content-Transfer-Encoding"] = "base64"
+
+	message := ""
+	for k, v := range header {
+		message += fmt.Sprintf("%s: %s\t\n", k, v)
+	}
+
+	message += "\t\n" + base64.StdEncoding.EncodeToString([]byte(text))
+
+	err := smtp.SendMail(
+		fmt.Sprintf("%s:%d", sh.Host, sh.Port),
+		sh.Auth,
+		sh.From,
+		sh.To,
+		[]byte(message),
+	)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err.Error())
+	}
 }
