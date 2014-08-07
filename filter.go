@@ -29,3 +29,17 @@ func (f *FilterGroup) DoFilter(rec *Record) bool {
 	}
 	return true
 }
+
+type LevelFilter struct {
+	Level LogLevel
+}
+
+func NewLevelFilter(level LogLevel) *LevelFilter {
+	return &LevelFilter{
+		Level: level,
+	}
+}
+
+func (lf *LevelFilter) DoFilter(rec *Record) bool {
+	return lf.Level < rec.Level
+}
