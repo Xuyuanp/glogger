@@ -61,6 +61,8 @@ func (hg *HandlerGroup) Handle(rec *Record) {
 	}
 }
 
+// GenericHandler is an abstract struct which fully implemented Handler interface
+// expected Emit method.
 type GenericHandler struct {
 	FilterGroup
 	level     LogLevel
