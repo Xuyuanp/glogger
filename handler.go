@@ -54,7 +54,7 @@ func (gh *GroupHandler) Handle(rec *Record) {
 	for e := gh.Handlers.Front(); e != nil; e = e.Next() {
 		var h Handler = e.Value.(Handler)
 		func() {
-			if !h.DoFilter(rec) {
+			if rec.Level < h.GetLevel() || !h.DoFilter(rec) {
 				return
 			}
 			h.GetMutex().Lock()
@@ -81,7 +81,6 @@ func NewHandler(name string, level LogLevel, formatter Formatter) *GenericHandle
 		level:     level,
 		formatter: formatter,
 	}
-	gh.AddFilter(NewLevelFilter(level))
 	return gh
 }
 
