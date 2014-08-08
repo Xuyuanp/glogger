@@ -40,7 +40,7 @@ type DefaultFormatter struct {
 	Fmt     string
 }
 
-func NewDefaultFormatter(format string, timeFmt string) Formatter {
+func NewDefaultFormatter(format string, timeFmt string) *DefaultFormatter {
 	if format == "" {
 		format = "%(msg)v"
 	}
@@ -76,10 +76,48 @@ func (df *DefaultFormatter) Format(rec *Record) string {
 		if ok {
 			args = append(args, field)
 			return "%v"
-		} else {
-			return match
 		}
+		return match
 	})
 
 	return fmt.Sprintf(newFmt, args...)
+}
+
+var defaultLevelColors = map[LogLevel]string{
+	DebugLevel:    "bold_cyan",
+	InfoLevel:     "bold_green",
+	WarnLevel:     "bold_yellow",
+	ErrorLevel:    "bold_red",
+	CriticalLevel: "bg_red",
+}
+
+type RainbowFormatter struct {
+	*DefaultFormatter
+	LevelColors map[LogLevel]string
+}
+
+func NewRainbowFormatter(format string, timeFmt string) *RainbowFormatter {
+	rf := &RainbowFormatter{
+		DefaultFormatter: NewDefaultFormatter(format, timeFmt),
+		LevelColors:      defaultLevelColors,
+	}
+	return rf
+}
+
+func (rf *RainbowFormatter) Format(rec *Record) string {
+	newFmt := rf.DefaultFormatter.Format(rec)
+
+	newFmt = fieldHolderRegexp.ReplaceAllStringFunc(newFmt, func(match string) string {
+		m := match[2 : len(match)-1]
+		if m == "log_color" {
+			m, _ = rf.LevelColors[rec.Level]
+		}
+		code, ok := EscapeCodes[m]
+		if ok {
+			return code
+		}
+		return match
+	})
+
+	return newFmt
 }
