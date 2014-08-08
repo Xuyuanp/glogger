@@ -33,8 +33,8 @@ const (
 )
 
 type Logger struct {
-	FilterGroup
-	HandlerGroup
+	GroupFilter
+	GroupHandler
 	Name   string
 	Level  LogLevel
 	Parent *Logger

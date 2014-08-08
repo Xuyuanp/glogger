@@ -16,25 +16,32 @@
 
 package glogger
 
-import "time"
+import (
+	"regexp"
+	"time"
+)
 
 type Record struct {
 	Name    string
 	Level   LogLevel
 	Time    time.Time
-	File    string
+	LFile   string
+	SFile   string
 	Line    int
 	Message string
 }
+
+var pathReg = regexp.MustCompile("/.*/")
 
 func NewRecord(name string, t time.Time, level LogLevel, file string, line int, msg string) *Record {
 	rec := &Record{
 		Name:    name,
 		Level:   level,
 		Time:    t,
-		File:    file,
+		LFile:   file,
 		Line:    line,
 		Message: msg,
 	}
+	rec.SFile = pathReg.ReplaceAllString(file, "")
 	return rec
 }

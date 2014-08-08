@@ -16,12 +16,18 @@
 
 package glogger
 
-import "fmt"
+import (
+	"fmt"
+	"regexp"
+	"strings"
+	"time"
+)
 
 var LevelMap = map[LogLevel]string{
 	DebugLevel:    "DBUG",
 	InfoLevel:     "INFO",
 	WarnLevel:     "WARN",
+	ErrorLevel:    "ERRO",
 	CriticalLevel: "CRIT",
 }
 
@@ -30,20 +36,50 @@ type Formatter interface {
 }
 
 type DefaultFormatter struct {
-	Fmt string
+	TimeFmt string
+	Fmt     string
 }
 
-func NewDefaultFormatter(format string) Formatter {
+func NewDefaultFormatter(format string, timeFmt string) Formatter {
 	if format == "" {
-		format = "[%s\t%s\t%s\t%s\t:%d] %s"
+		format = "%(msg)v"
+	}
+	if timeFmt == "" {
+		timeFmt = time.Stamp
 	}
 	df := &DefaultFormatter{
-		Fmt: format,
+		TimeFmt: timeFmt,
+		Fmt:     format,
 	}
 	return df
 }
 
+var fieldHolderRegexp = regexp.MustCompile("\\$\\{\\w+\\}")
+
 func (df *DefaultFormatter) Format(rec *Record) string {
-	levelName, _ := LevelMap[rec.Level]
-	return fmt.Sprintf(df.Fmt, rec.Name, rec.Time, levelName, rec.File, rec.Line, rec.Message)
+	args := []interface{}{}
+	newFmt := df.Fmt
+	fieldMap := map[string]interface{}{
+		"name":      rec.Name,
+		"time":      rec.Time.Format(df.TimeFmt),
+		"levelno":   rec.Level,
+		"levelname": LevelMap[rec.Level],
+		"lfile":     rec.LFile,
+		"sfile":     rec.SFile,
+		"line":      rec.Line,
+		"msg":       rec.Message,
+	}
+	newFmt = strings.Replace(newFmt, "%", "%%", -1)
+	newFmt = fieldHolderRegexp.ReplaceAllStringFunc(newFmt, func(match string) string {
+		fieldName := match[2 : len(match)-1]
+		field, ok := fieldMap[fieldName]
+		if ok {
+			args = append(args, field)
+			return "%v"
+		} else {
+			return match
+		}
+	})
+
+	return fmt.Sprintf(newFmt, args...)
 }

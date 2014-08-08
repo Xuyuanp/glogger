@@ -22,18 +22,18 @@ type Filter interface {
 	DoFilter(rec *Record) bool
 }
 
-type FilterGroup struct {
+type GroupFilter struct {
 	filters *list.List
 }
 
-func (f *FilterGroup) AddFilter(ft Filter) {
+func (f *GroupFilter) AddFilter(ft Filter) {
 	if f.filters == nil {
 		f.filters = list.New()
 	}
 	f.filters.PushBack(ft)
 }
 
-func (f *FilterGroup) DoFilter(rec *Record) bool {
+func (f *GroupFilter) DoFilter(rec *Record) bool {
 	if f.filters == nil {
 		return true
 	}
