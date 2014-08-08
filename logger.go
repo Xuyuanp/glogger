@@ -17,8 +17,10 @@
 package glogger
 
 import (
+	"errors"
 	"fmt"
 	"runtime"
+	"sync"
 	"time"
 )
 
@@ -31,6 +33,36 @@ const (
 	ErrorLevel
 	CriticalLevel
 )
+
+type loggerMapper struct {
+	mapper map[string]*Logger
+	mu     sync.RWMutex
+}
+
+var lm *loggerMapper = &loggerMapper{
+	mapper: map[string]*Logger{},
+}
+
+func GetLogger(name string) *Logger {
+	lm.mu.RLock()
+	defer lm.mu.RUnlock()
+	logger, ok := lm.mapper[name]
+	if ok {
+		return logger
+	}
+	return nil
+}
+
+func registerLogger(logger *Logger) error {
+	lm.mu.Lock()
+	defer lm.mu.Unlock()
+	_, ok := lm.mapper[logger.Name]
+	if ok {
+		return errors.New(fmt.Sprintf("Logger with name %s has exists", logger.Name))
+	}
+	lm.mapper[logger.Name] = logger
+	return nil
+}
 
 type Logger struct {
 	GroupFilter
@@ -45,11 +77,14 @@ func NewLogger(name string, level LogLevel) *Logger {
 		Name:  name,
 		Level: level,
 	}
-	l.AddFilter(NewLevelFilter(level))
+	registerLogger(l)
 	return l
 }
 
 func (l *Logger) log(level LogLevel, msg string) {
+	if level < l.Level {
+		return
+	}
 	now := time.Now()
 	_, file, line, ok := runtime.Caller(2)
 	if !ok {
