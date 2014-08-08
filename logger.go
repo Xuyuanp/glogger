@@ -45,11 +45,14 @@ func NewLogger(name string, level LogLevel) *Logger {
 		Name:  name,
 		Level: level,
 	}
-	l.AddFilter(NewLevelFilter(level))
+	registerLogger(l)
 	return l
 }
 
 func (l *Logger) log(level LogLevel, msg string) {
+	if level < l.Level {
+		return
+	}
 	now := time.Now()
 	_, file, line, ok := runtime.Caller(2)
 	if !ok {
