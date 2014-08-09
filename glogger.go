@@ -111,7 +111,7 @@ func registerLogger(l Logger) {
 // gLogger is the default Logger
 type gLogger struct {
 	GroupFilter
-	GroupHandler
+	handlerManger
 	name  string
 	level LogLevel
 }
