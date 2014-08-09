@@ -27,21 +27,26 @@ type loggerMapper struct {
 	mu     sync.RWMutex
 }
 
-var lm *loggerMapper = &loggerMapper{
-	mapper: map[string]*Logger{},
+var lm *loggerMapper
+var once sync.Once
+
+func init() {
+	once.Do(setup)
 }
 
-func GetLogger(name string) *Logger {
+func setup() {
+	lm = &loggerMapper{
+		mapper: map[string]*Logger{},
+	}
+}
+
+func (lm *loggerMapper) GetLogger(name string) *Logger {
 	lm.mu.RLock()
 	defer lm.mu.RUnlock()
-	logger, ok := lm.mapper[name]
-	if ok {
-		return logger
-	}
-	return nil
+	return lm.mapper[name]
 }
 
-func registerLogger(logger *Logger) error {
+func (lm *loggerMapper) registerLogger(logger *Logger) error {
 	lm.mu.Lock()
 	defer lm.mu.Unlock()
 	_, ok := lm.mapper[logger.Name]
@@ -50,4 +55,12 @@ func registerLogger(logger *Logger) error {
 	}
 	lm.mapper[logger.Name] = logger
 	return nil
+}
+
+func GetLogger(name string) *Logger {
+	return lm.GetLogger(name)
+}
+
+func registerLogger(logger *Logger) error {
+	return lm.registerLogger(logger)
 }
