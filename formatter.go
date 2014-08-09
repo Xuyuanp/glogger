@@ -39,7 +39,7 @@ type DefaultFormatter struct {
 	Fmt     string
 }
 
-var defaultFormat = "[${time} ${levelname} ${sfile}:${line}] ${msg}"
+var defaultFormat = "[${time} ${levelname} ${sfile}:${line} ${func}] ${msg}"
 var defaultTimeFormat = "2006-01-02 15:04:05"
 
 func NewDefaultFormatter() *DefaultFormatter {
@@ -62,6 +62,7 @@ func (df *DefaultFormatter) Format(rec *Record) string {
 		"levelname": LevelMap[rec.Level],
 		"lfile":     rec.LFile,
 		"sfile":     rec.SFile,
+		"func":      rec.Func,
 		"line":      rec.Line,
 		"msg":       rec.Message,
 	}
@@ -87,7 +88,7 @@ var defaultLevelColors = map[LogLevel]string{
 	CriticalLevel: "bg_bold_red",
 }
 
-var defaultRainbowFormat = "[${time} ${log_color}${levelname}${reset} ${dim}${green}${sfile}${reset}:${line}] ${msg}"
+var defaultRainbowFormat = "[${time} ${log_color}${levelname}${reset} ${dim}${green}${sfile}${reset}:${line} ${func}] ${msg}"
 
 type RainbowFormatter struct {
 	*DefaultFormatter

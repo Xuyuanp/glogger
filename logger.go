@@ -86,12 +86,13 @@ func (l *Logger) log(level LogLevel, msg string) {
 		return
 	}
 	now := time.Now()
-	_, file, line, ok := runtime.Caller(2)
+	pc, file, line, ok := runtime.Caller(2)
+	f := runtime.FuncForPC(pc)
 	if !ok {
 		file = "???"
 		line = 0
 	}
-	rec := NewRecord(l.Name, now, level, file, line, msg)
+	rec := NewRecord(l.Name, now, level, file, f.Name(), line, msg)
 	if !l.DoFilter(rec) {
 		return
 	}

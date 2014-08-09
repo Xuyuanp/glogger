@@ -28,18 +28,20 @@ type Record struct {
 	LFile   string
 	SFile   string
 	Line    int
+	Func    string
 	Message string
 }
 
 var pathReg = regexp.MustCompile("/.*/")
 
-func NewRecord(name string, t time.Time, level LogLevel, file string, line int, msg string) *Record {
+func NewRecord(name string, t time.Time, level LogLevel, file string, funcname string, line int, msg string) *Record {
 	rec := &Record{
 		Name:    name,
 		Level:   level,
 		Time:    t,
 		LFile:   file,
 		Line:    line,
+		Func:    funcname,
 		Message: msg,
 	}
 	rec.SFile = pathReg.ReplaceAllString(file, "")
