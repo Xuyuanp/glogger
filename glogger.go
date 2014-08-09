@@ -17,33 +17,37 @@
 package glogger
 
 import (
-	"regexp"
-	"time"
+	"errors"
+	"fmt"
+	"sync"
 )
 
-type Record struct {
-	Name    string
-	Level   LogLevel
-	Time    time.Time
-	LFile   string
-	SFile   string
-	Line    int
-	Func    string
-	Message string
+type loggerMapper struct {
+	mapper map[string]*Logger
+	mu     sync.RWMutex
 }
 
-var pathReg = regexp.MustCompile("/.*/")
+var lm *loggerMapper = &loggerMapper{
+	mapper: map[string]*Logger{},
+}
 
-func NewRecord(name string, t time.Time, level LogLevel, file string, funcname string, line int, msg string) *Record {
-	rec := &Record{
-		Name:    name,
-		Level:   level,
-		Time:    t,
-		LFile:   file,
-		Line:    line,
-		Func:    funcname,
-		Message: msg,
+func GetLogger(name string) *Logger {
+	lm.mu.RLock()
+	defer lm.mu.RUnlock()
+	logger, ok := lm.mapper[name]
+	if ok {
+		return logger
 	}
-	rec.SFile = pathReg.ReplaceAllString(file, "")
-	return rec
+	return nil
+}
+
+func registerLogger(logger *Logger) error {
+	lm.mu.Lock()
+	defer lm.mu.Unlock()
+	_, ok := lm.mapper[logger.Name]
+	if ok {
+		return errors.New(fmt.Sprintf("Logger with name %s has exists", logger.Name))
+	}
+	lm.mapper[logger.Name] = logger
+	return nil
 }
