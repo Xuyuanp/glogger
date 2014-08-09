@@ -88,7 +88,7 @@ var defaultLevelColors = map[LogLevel]string{
 	CriticalLevel: "bg_bold_red",
 }
 
-var defaultRainbowFormat = "[${time} ${log_color}${levelname}${reset} ${dim}${green}${sfile}${reset}:${line} ${func}] ${msg}"
+var defaultRainbowFormat = "[${time} ${log_color}${levelname}${reset} ${dim}${green}${sfile}${reset}:${line} ${dim_cyan}${func}${reset}] ${msg}"
 
 type RainbowFormatter struct {
 	*DefaultFormatter
