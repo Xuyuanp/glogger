@@ -85,11 +85,7 @@ func setup() {
 func (lm *loggerMapper) GetLogger(name string) Logger {
 	lm.mu.RLock()
 	defer lm.mu.RUnlock()
-	logger, ok := lm.mapper[name]
-	if ok {
-		return logger
-	}
-	return nil
+	return lm.mapper[name]
 }
 
 func (lm *loggerMapper) registerLogger(l Logger) {
