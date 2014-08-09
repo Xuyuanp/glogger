@@ -20,7 +20,6 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
-	"time"
 )
 
 var LevelMap = map[LogLevel]string{
@@ -40,16 +39,13 @@ type DefaultFormatter struct {
 	Fmt     string
 }
 
-func NewDefaultFormatter(format string, timeFmt string) *DefaultFormatter {
-	if format == "" {
-		format = "%(msg)v"
-	}
-	if timeFmt == "" {
-		timeFmt = time.Stamp
-	}
+var defaultFormat = "[${time} ${levelname} ${sfile}:${line}] ${msg}"
+var defaultTimeFormat = "2006-01-02 15:04:05"
+
+func NewDefaultFormatter() *DefaultFormatter {
 	df := &DefaultFormatter{
-		TimeFmt: timeFmt,
-		Fmt:     format,
+		TimeFmt: defaultTimeFormat,
+		Fmt:     defaultFormat,
 	}
 	return df
 }
@@ -88,18 +84,23 @@ var defaultLevelColors = map[LogLevel]string{
 	InfoLevel:     "bold_green",
 	WarnLevel:     "bold_yellow",
 	ErrorLevel:    "bold_red",
-	CriticalLevel: "bg_red",
+	CriticalLevel: "bg_bold_red",
 }
+
+var defaultRainbowFormat = "[${time} ${log_color}${levelname}${reset} ${dim}${green}${sfile}${reset}:${line}] ${msg}"
 
 type RainbowFormatter struct {
 	*DefaultFormatter
 	LevelColors map[LogLevel]string
 }
 
-func NewRainbowFormatter(format string, timeFmt string) *RainbowFormatter {
+func NewRainbowFormatter() *RainbowFormatter {
 	rf := &RainbowFormatter{
-		DefaultFormatter: NewDefaultFormatter(format, timeFmt),
-		LevelColors:      defaultLevelColors,
+		DefaultFormatter: &DefaultFormatter{
+			Fmt:     defaultRainbowFormat,
+			TimeFmt: defaultTimeFormat,
+		},
+		LevelColors: defaultLevelColors,
 	}
 	return rf
 }
@@ -118,6 +119,8 @@ func (rf *RainbowFormatter) Format(rec *Record) string {
 		}
 		return match
 	})
+
+	newFmt += EscapeCodes["reset"]
 
 	return newFmt
 }
