@@ -23,6 +23,7 @@ import (
 	"io"
 	"net/smtp"
 	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 )
@@ -106,9 +107,6 @@ type StreamHandler struct {
 }
 
 func NewStreamHandler(name string, level LogLevel, formatter Formatter, w io.Writer) *StreamHandler {
-	if w == nil {
-		panic(w)
-	}
 	sh := &StreamHandler{
 		GenericHandler: NewHandler(name, level, formatter),
 		Writer:         w,
@@ -128,12 +126,12 @@ type FileHandler struct {
 }
 
 func NewFileHandler(name string, level LogLevel, formatter Formatter, fileName string, flag int, pem os.FileMode) *FileHandler {
-	file, err := os.OpenFile(fileName, flag, pem)
+	fileName, err := filepath.Abs(fileName)
 	if err != nil {
-		panic(err)
+		return nil
 	}
 	fh := &FileHandler{
-		StreamHandler: NewStreamHandler(name, level, formatter, file),
+		StreamHandler: NewStreamHandler(name, level, formatter, nil),
 		FileName:      fileName,
 		Flag:          flag,
 		Pem:           pem,
@@ -142,6 +140,14 @@ func NewFileHandler(name string, level LogLevel, formatter Formatter, fileName s
 }
 
 func (fh *FileHandler) Emit(text string) {
+	if fh.Writer == nil {
+		file, err := os.OpenFile(fh.FileName, fh.Flag, fh.Pem)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			return
+		}
+		fh.Writer = file
+	}
 	fh.StreamHandler.Emit(text)
 }
 
