@@ -32,34 +32,34 @@ type Handler interface {
 	Filter
 	Emit(log string)
 	Format(rec *Record) string
-	GetLevel() LogLevel
-	GetMutex() *sync.Mutex
-	GetName() string
+	Level() LogLevel
+	Mutex() *sync.Mutex
+	Name() string
 }
 
-type GroupHandler struct {
-	Handlers *list.List
+type handlerManger struct {
+	handlers *list.List
 }
 
-func (gh *GroupHandler) AddHandler(h Handler) {
-	if gh.Handlers == nil {
-		gh.Handlers = list.New()
+func (hm *handlerManger) AddHandler(h Handler) {
+	if hm.handlers == nil {
+		hm.handlers = list.New()
 	}
-	gh.Handlers.PushBack(h)
+	hm.handlers.PushBack(h)
 }
 
-func (gh *GroupHandler) Handle(rec *Record) {
-	if gh.Handlers == nil {
+func (hm *handlerManger) Handle(rec *Record) {
+	if hm.handlers == nil {
 		return
 	}
-	for e := gh.Handlers.Front(); e != nil; e = e.Next() {
+	for e := hm.handlers.Front(); e != nil; e = e.Next() {
 		var h Handler = e.Value.(Handler)
 		func() {
-			if rec.Level < h.GetLevel() || !h.DoFilter(rec) {
+			if rec.Level < h.Level() || !h.DoFilter(rec) {
 				return
 			}
-			h.GetMutex().Lock()
-			defer h.GetMutex().Unlock()
+			h.Mutex().Lock()
+			defer h.Mutex().Unlock()
 			log := h.Format(rec)
 			h.Emit(log)
 		}()
@@ -89,15 +89,15 @@ func (gh *GenericHandler) Format(rec *Record) string {
 	return gh.formatter.Format(rec)
 }
 
-func (gh *GenericHandler) GetLevel() LogLevel {
+func (gh *GenericHandler) Level() LogLevel {
 	return gh.level
 }
 
-func (gh *GenericHandler) GetMutex() *sync.Mutex {
+func (gh *GenericHandler) Mutex() *sync.Mutex {
 	return &(gh.mu)
 }
 
-func (gh *GenericHandler) GetName() string {
+func (gh *GenericHandler) Name() string {
 	return gh.name
 }
 
