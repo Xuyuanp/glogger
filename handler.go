@@ -121,11 +121,9 @@ func (sh *StreamHandler) Emit(text string) {
 type FileHandler struct {
 	*StreamHandler
 	FileName string
-	Flag     int
-	Pem      os.FileMode
 }
 
-func NewFileHandler(name string, level LogLevel, formatter Formatter, fileName string, flag int, pem os.FileMode) *FileHandler {
+func NewFileHandler(name string, level LogLevel, formatter Formatter, fileName string) *FileHandler {
 	fileName, err := filepath.Abs(fileName)
 	if err != nil {
 		return nil
@@ -133,15 +131,13 @@ func NewFileHandler(name string, level LogLevel, formatter Formatter, fileName s
 	fh := &FileHandler{
 		StreamHandler: NewStreamHandler(name, level, formatter, nil),
 		FileName:      fileName,
-		Flag:          flag,
-		Pem:           pem,
 	}
 	return fh
 }
 
 func (fh *FileHandler) Emit(text string) {
 	if fh.Writer == nil {
-		file, err := os.OpenFile(fh.FileName, fh.Flag, fh.Pem)
+		file, err := os.OpenFile(fh.FileName, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0640)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			return
