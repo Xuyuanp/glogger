@@ -16,11 +16,43 @@
 
 package glogger
 
+import "sync"
+
+func init() {
+	onceFormatterManager.Do(initFormatterManager)
+}
+
 type Formatter interface {
 	ConfigLoader
 	Format(rec *Record) string
 }
 
-func RegisterFormatter(name string, formatter Formatter) {
+type formatterManager struct {
+	mapper map[string]Formatter
+	mu     sync.RWMutex
+}
 
+var fmtManager *formatterManager
+var onceFormatterManager sync.Once
+
+func initFormatterManager() {
+	fmtManager = &formatterManager{
+		mapper: map[string]Formatter{},
+	}
+}
+
+func RegisterFormatter(name string, formatter Formatter) {
+	fmtManager.mu.Lock()
+	defer fmtManager.mu.Unlock()
+	_, dup := fmtManager.mapper[name]
+	if dup {
+		panic("Formatter named " + name + " twice")
+	}
+	fmtManager.mapper[name] = formatter
+}
+
+func GetFormatter(name string) Formatter {
+	fmtManager.mu.RLock()
+	defer fmtManager.mu.RUnlock()
+	return fmtManager.mapper[name]
 }

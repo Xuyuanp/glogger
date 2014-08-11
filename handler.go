@@ -22,6 +22,10 @@ import (
 	"sync"
 )
 
+func init() {
+	onceHandlerManager.Do(initHandlermanager)
+}
+
 type Handler interface {
 	Namer
 	Leveler
@@ -31,26 +35,52 @@ type Handler interface {
 	Mutex() *sync.Mutex
 }
 
-func RegisterHandler(name string, handler Handler) {
-
+type handlerManager struct {
+	mapper map[string]Handler
+	mu     sync.RWMutex
 }
 
-type handlerManger struct {
+var hdlManager *handlerManager
+var onceHandlerManager sync.Once
+
+func initHandlermanager() {
+	hdlManager = &handlerManager{
+		mapper: map[string]Handler{},
+	}
+}
+
+func RegisterHandler(name string, handler Handler) {
+	hdlManager.mu.Lock()
+	defer hdlManager.mu.Unlock()
+	_, dup := hdlManager.mapper[name]
+	if dup {
+		panic("Register Handler named " + name + " twice")
+	}
+	hdlManager.mapper[name] = handler
+}
+
+func GetHandler(name string) Handler {
+	hdlManager.mu.RLock()
+	defer hdlManager.mu.RUnlock()
+	return hdlManager.mapper[name]
+}
+
+type handlerGroup struct {
 	handlers *list.List
 }
 
-func (hm *handlerManger) AddHandler(h Handler) {
-	if hm.handlers == nil {
-		hm.handlers = list.New()
+func (hg *handlerGroup) AddHandler(h Handler) {
+	if hg.handlers == nil {
+		hg.handlers = list.New()
 	}
-	hm.handlers.PushBack(h)
+	hg.handlers.PushBack(h)
 }
 
-func (hm *handlerManger) Handle(rec *Record) {
-	if hm.handlers == nil {
+func (hg *handlerGroup) Handle(rec *Record) {
+	if hg.handlers == nil {
 		return
 	}
-	for e := hm.handlers.Front(); e != nil; e = e.Next() {
+	for e := hg.handlers.Front(); e != nil; e = e.Next() {
 		var h Handler = e.Value.(Handler)
 		func() {
 			if rec.Level < h.Level() || !h.Filter(rec) {

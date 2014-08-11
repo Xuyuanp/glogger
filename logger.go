@@ -25,7 +25,7 @@ import (
 // gLogger is the default Logger
 type gLogger struct {
 	GroupFilter
-	handlerManger
+	handlerGroup
 	name  string
 	level LogLevel
 }

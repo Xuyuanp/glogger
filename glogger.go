@@ -86,25 +86,25 @@ func setup() {
 	}
 }
 
-func (lm *loggerMapper) GetLogger(name string) Logger {
+func (lm *loggerMapper) getLogger(name string) Logger {
 	lm.mu.RLock()
 	defer lm.mu.RUnlock()
 	return lm.mapper[name]
 }
 
-func (lm *loggerMapper) UnRegisterLogger(l Logger) {
+func (lm *loggerMapper) unRegisterLogger(l Logger) {
 	lm.mu.Lock()
 	defer lm.mu.Unlock()
 	delete(lm.mapper, l.Name())
 }
 
-func (lm *loggerMapper) UnRegisterLoggerByName(name string) {
+func (lm *loggerMapper) unRegisterLoggerByName(name string) {
 	lm.mu.Lock()
 	defer lm.mu.Unlock()
 	delete(lm.mapper, name)
 }
 
-func (lm *loggerMapper) RegisterLogger(l Logger) {
+func (lm *loggerMapper) registerLogger(l Logger) {
 	lm.mu.Lock()
 	defer lm.mu.Unlock()
 	_, ok := lm.mapper[l.Name()]
@@ -117,17 +117,17 @@ func (lm *loggerMapper) RegisterLogger(l Logger) {
 // GetLogger return a Logger with name.
 // GetLogger will return nil if there is no Logger with this name
 func GetLogger(name string) Logger {
-	return lm.GetLogger(name)
+	return lm.getLogger(name)
 }
 
 func UnRegisterLogger(l Logger) {
-	lm.UnRegisterLogger(l)
+	lm.unRegisterLogger(l)
 }
 
 func UnRegisterLoggerByName(name string) {
-	lm.UnRegisterLoggerByName(name)
+	lm.unRegisterLoggerByName(name)
 }
 
 func RegisterLogger(l Logger) {
-	lm.RegisterLogger(l)
+	lm.registerLogger(l)
 }
