@@ -24,6 +24,16 @@ import (
 	"github.com/Xuyuanp/glogger"
 )
 
+func init() {
+	glogger.RegisterConfigLoaderBuilder("DefaultFormatter", func() glogger.ConfigLoader {
+		df := &DefaultFormatter{
+			TimeFmt: defaultTimeFormat,
+			Fmt:     defaultFormat,
+		}
+		return df
+	})
+}
+
 var LevelMap = map[glogger.LogLevel]string{
 	glogger.DebugLevel:    "DBUG",
 	glogger.InfoLevel:     "INFO",

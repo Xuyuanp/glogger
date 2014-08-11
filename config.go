@@ -16,15 +16,12 @@
 
 package glogger
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"sync"
+)
 
-type HandlerBuilderFunc func() Handler
-type FormatterBuilderFunc func() Formatter
-type FilterBuilderFunc func() Filter
-
-var handlerBuilderMap map[string]HandlerBuilderFunc
-var formatterBuilderMap map[string]FormatterBuilderFunc
-var filterBuilderMap map[string]FilterBuilderFunc
+type ConfigLoaderBuilder func() ConfigLoader
 
 type ConfigLoader interface {
 	LoadConfig(config []byte)
@@ -32,92 +29,104 @@ type ConfigLoader interface {
 	LoadConfigFromFile(fileName string)
 }
 
-func RegisterFilterBuilder(name string, builder HandlerBuilderFunc) {
+var manager *configLoaderBuilderManager
+var onceManager sync.Once
 
+func init() {
+	onceManager.Do(initManager)
 }
 
-func RegisterFormatterBuilder(name string, builder HandlerBuilderFunc) {
-
+func initManager() {
+	manager = &configLoaderBuilderManager{
+		mapper: map[string]ConfigLoaderBuilder{},
+	}
 }
 
-func RegisterHandlerBuilder(name string, builder HandlerBuilderFunc) {
-
+type configLoaderBuilderManager struct {
+	mapper map[string]ConfigLoaderBuilder
+	mu     sync.RWMutex
 }
 
-func GetFilterBuilder(name string) FilterBuilderFunc {
-	return nil
+func (manager *configLoaderBuilderManager) registerConfigLoaderBuilder(name string, configLoader ConfigLoaderBuilder) {
+	manager.mu.Lock()
+	defer manager.mu.Unlock()
+	_, dup := manager.mapper[name]
+	if dup {
+		panic("Duplicate ConfigLoader with name " + name)
+	}
+	manager.mapper[name] = configLoader
 }
 
-func GetFormatterBuilder(name string) FormatterBuilderFunc {
-	return nil
+func (manager *configLoaderBuilderManager) getConfigLoaderBuilder(name string) ConfigLoaderBuilder {
+	manager.mu.RLock()
+	defer manager.mu.RUnlock()
+	return manager.mapper[name]
 }
 
-func GetHandlerBuilder(name string) HandlerBuilderFunc {
-	return nil
+func RegisterConfigLoaderBuilder(name string, configLoader ConfigLoaderBuilder) {
+	manager.registerConfigLoaderBuilder(name, configLoader)
+}
+
+func GetConfigLoaderBuilder(name string) ConfigLoaderBuilder {
+	return manager.getConfigLoaderBuilder(name)
 }
 
 func LoadConfig(config []byte) {
-	var mapConfig map[string]map[string]map[string]interface{}
-	err := json.Unmarshal(config, &mapConfig)
+	var configMap map[string]map[string]map[string]interface{}
+	err := json.Unmarshal(config, &configMap)
 	if err != nil {
 		panic(err)
 	}
 
-	filters, ok := mapConfig["filters"]
-	if ok {
-		for _, conf := range filters {
-			t, yes := conf["type"]
-			if !yes {
-				panic("Filter config must have a 'type' field")
-			}
-			builder, yes := filterBuilderMap[t.(string)]
-			if !yes {
-				panic("No Filter builder for " + t.(string))
-			}
-			filter := builder()
-			filter.LoadConfigFromMap(conf)
+	process := func(name string, conf map[string]interface{}, callback func(loader ConfigLoader)) {
+		builderName_, yes := conf["builder"]
+		var builderName string
+		if !yes {
+			panic("'build' field is required for section " + name)
 		}
+		builderName = builderName_.(string)
+		builder := GetConfigLoaderBuilder(builderName)
+		if builder == nil {
+			panic("Builder named " + builderName + " doesn't exist")
+		}
+		loader := builder()
+		loader.LoadConfigFromMap(conf)
+		callback(loader)
 	}
 
-	formatters, ok := mapConfig["formatters"]
+	filters, ok := configMap["filters"]
 	if ok {
-		for _, conf := range formatters {
-			t, yes := conf["type"]
-			if !yes {
-				panic("Formatter config must have a 'type' field")
-			}
-			builder, yes := formatterBuilderMap[t.(string)]
-			if !yes {
-				panic("No Formatter builder for " + t.(string))
-			}
-			formatter := builder()
-			formatter.LoadConfigFromMap(conf)
+		for name, conf := range filters {
+			process(name, conf, func(loader ConfigLoader) {
+				filter := loader.(Filter)
+				RegisterFilter(name, filter)
+			})
 		}
 	}
-
-	handlers, ok := mapConfig["handlers"]
+	formatters, ok := configMap["formatters"]
 	if ok {
-		for _, conf := range handlers {
-			t, yes := conf["type"]
-			if !yes {
-				panic("Handlers config must have a 'type' field")
-			}
-			builder, yes := handlerBuilderMap[t.(string)]
-			if !yes {
-				panic("No Handler builder for " + t.(string))
-			}
-			handler := builder()
-			handler.LoadConfigFromMap(conf)
+		for name, conf := range formatters {
+			process(name, conf, func(loader ConfigLoader) {
+				formatter := loader.(Formatter)
+				RegisterFormatter(name, formatter)
+			})
 		}
 	}
-
-	loggers, ok := mapConfig["loggers"]
+	handlers, ok := configMap["handlers"]
+	if ok {
+		for name, conf := range handlers {
+			process(name, conf, func(loader ConfigLoader) {
+				handler := loader.(Handler)
+				RegisterHandler(name, handler)
+			})
+		}
+	}
+	loggers, ok := configMap["loggers"]
 	if ok {
 		for name, conf := range loggers {
 			logger := new(gLogger)
 			logger.LoadConfigFromMap(conf)
 			logger.SetName(name)
-			RegisterLogger(logger)
 		}
 	}
 }

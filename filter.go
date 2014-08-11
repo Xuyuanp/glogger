@@ -23,6 +23,10 @@ type Filter interface {
 	Filter(rec *Record) bool
 }
 
+func RegisterFilter(name string, filter Filter) {
+
+}
+
 type GroupFilter struct {
 	filters *list.List
 }

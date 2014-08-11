@@ -31,6 +31,10 @@ type Handler interface {
 	Mutex() *sync.Mutex
 }
 
+func RegisterHandler(name string, handler Handler) {
+
+}
+
 type handlerManger struct {
 	handlers *list.List
 }

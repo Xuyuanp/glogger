@@ -20,3 +20,7 @@ type Formatter interface {
 	ConfigLoader
 	Format(rec *Record) string
 }
+
+func RegisterFormatter(name string, formatter Formatter) {
+
+}
