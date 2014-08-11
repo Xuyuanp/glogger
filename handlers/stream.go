@@ -14,8 +14,27 @@
  * limitations under the License.
  */
 
-package glogger
+package handlers
 
-type Formatter interface {
-	Format(rec *Record) string
+import (
+	"io"
+
+	"github.com/Xuyuanp/glogger"
+)
+
+type StreamHandler struct {
+	*GenericHandler
+	Writer io.Writer
+}
+
+func NewStreamHandler(name string, level glogger.LogLevel, formatter glogger.Formatter, w io.Writer) *StreamHandler {
+	sh := &StreamHandler{
+		GenericHandler: NewHandler(name, level, formatter),
+		Writer:         w,
+	}
+	return sh
+}
+
+func (sh *StreamHandler) Emit(text string) {
+	sh.Writer.Write([]byte(text + "\n"))
 }
