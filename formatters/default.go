@@ -17,7 +17,10 @@
 package formatters
 
 import (
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"os"
 	"regexp"
 	"strings"
 
@@ -25,12 +28,8 @@ import (
 )
 
 func init() {
-	glogger.RegisterConfigLoaderBuilder("DefaultFormatter", func() glogger.ConfigLoader {
-		df := &DefaultFormatter{
-			TimeFmt: defaultTimeFormat,
-			Fmt:     defaultFormat,
-		}
-		return df
+	glogger.RegisterConfigLoaderBuilder("github/Xuyuanp/glogger/formatters.DefaultFormatter", func() glogger.ConfigLoader {
+		return NewDefaultFormatter()
 	})
 }
 
@@ -43,8 +42,8 @@ var LevelMap = map[glogger.LogLevel]string{
 }
 
 type DefaultFormatter struct {
-	TimeFmt string
-	Fmt     string
+	TimeFmt string `json:timefmt`
+	Fmt     string `json:fmt`
 }
 
 var defaultFormat = "[${time} ${levelname} ${sfile}:${line} ${func}] ${msg}"
@@ -89,13 +88,30 @@ func (df *DefaultFormatter) Format(rec *glogger.Record) string {
 }
 
 func (df *DefaultFormatter) LoadConfig(config []byte) {
-
+	err := json.Unmarshal(config, df)
+	if err != nil {
+		panic(err)
+	}
 }
 
 func (df *DefaultFormatter) LoadConfigFromMap(config map[string]interface{}) {
-
+	code, err := json.Marshal(config)
+	if err != nil {
+		panic(err)
+	}
+	df.LoadConfig(code)
 }
 
 func (df *DefaultFormatter) LoadConfigFromFile(fileName string) {
+	file, err := os.Open(fileName)
+	if err != nil {
+		panic(err)
+	}
+	defer file.Close()
 
+	code, err := ioutil.ReadAll(file)
+	if err != nil {
+		panic(err)
+	}
+	df.LoadConfig(code)
 }

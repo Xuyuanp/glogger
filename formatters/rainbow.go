@@ -16,7 +16,19 @@
 
 package formatters
 
-import "github.com/Xuyuanp/glogger"
+import (
+	"encoding/json"
+	"io/ioutil"
+	"os"
+
+	"github.com/Xuyuanp/glogger"
+)
+
+func init() {
+	glogger.RegisterConfigLoaderBuilder("github/Xuyuanp/glogger/formatters.RainbowFormatter", func() glogger.ConfigLoader {
+		return NewRainbowFormatter()
+	})
+}
 
 var defaultLevelColors = map[glogger.LogLevel]string{
 	glogger.DebugLevel:    "bold_cyan",
@@ -62,4 +74,48 @@ func (rf *RainbowFormatter) Format(rec *glogger.Record) string {
 	newFmt += EscapeCodes["reset"]
 
 	return newFmt
+}
+
+func (rf *RainbowFormatter) LoadConfig(config []byte) {
+	var m map[string]interface{}
+	err := json.Unmarshal(config, &m)
+	if err != nil {
+		panic(err)
+	}
+	rf.LoadConfigFromMap(m)
+}
+
+func (rf *RainbowFormatter) LoadConfigFromMap(config map[string]interface{}) {
+	format, ok := config["fmt"]
+	if ok {
+		rf.Fmt = format.(string)
+	}
+	timefmt, ok := config["timefmt"]
+	if ok {
+		rf.TimeFmt = timefmt.(string)
+	}
+
+	colors, ok := config["colors"]
+	if ok {
+		colorConfig := colors.(map[string]interface{})
+		rf.LevelColors[glogger.DebugLevel] = colorConfig["DEBUG"].(string)
+		rf.LevelColors[glogger.InfoLevel] = colorConfig["INFO"].(string)
+		rf.LevelColors[glogger.WarnLevel] = colorConfig["WARNING"].(string)
+		rf.LevelColors[glogger.ErrorLevel] = colorConfig["ERROR"].(string)
+		rf.LevelColors[glogger.CriticalLevel] = colorConfig["CRITICAL"].(string)
+	}
+}
+
+func (rf *RainbowFormatter) LoadConfigFromFile(fileName string) {
+	file, err := os.Open(fileName)
+	if err != nil {
+		panic(err)
+	}
+	defer file.Close()
+
+	code, err := ioutil.ReadAll(file)
+	if err != nil {
+		panic(err)
+	}
+	rf.LoadConfig(code)
 }
