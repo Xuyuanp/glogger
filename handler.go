@@ -23,12 +23,12 @@ import (
 )
 
 type Handler interface {
+	Namer
+	Leveler
 	Filter
 	Emit(log string)
 	Format(rec *Record) string
-	Level() LogLevel
 	Mutex() *sync.Mutex
-	Name() string
 }
 
 type handlerManger struct {

@@ -45,14 +45,22 @@ func (gh *GenericHandler) Format(rec *glogger.Record) string {
 	return gh.formatter.Format(rec)
 }
 
+func (gh *GenericHandler) Name() string {
+	return gh.name
+}
+
 func (gh *GenericHandler) Level() glogger.LogLevel {
 	return gh.level
 }
 
-func (gh *GenericHandler) Mutex() *sync.Mutex {
-	return &(gh.mu)
+func (gh *GenericHandler) SetName(name string) {
+	gh.name = name
 }
 
-func (gh *GenericHandler) Name() string {
-	return gh.name
+func (gh *GenericHandler) SetLevel(level glogger.LogLevel) {
+	gh.level = level
+}
+
+func (gh *GenericHandler) Mutex() *sync.Mutex {
+	return &(gh.mu)
 }
