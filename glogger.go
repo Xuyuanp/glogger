@@ -26,7 +26,7 @@ import (
 // LogLevel type
 type LogLevel uint8
 
-// log message level
+// LogLevel values
 const (
 	DebugLevel LogLevel = iota
 	InfoLevel
@@ -35,8 +35,20 @@ const (
 	CriticalLevel
 )
 
-// Logger is an interface supported functions like Debug, Info and so on
+type Namer interface {
+	Name() string
+	SetName(name string)
+}
+
+type Leveler interface {
+	Level() LogLevel
+	SetLevel(level LogLevel)
+}
+
+// Logger is an interface supported method like Debug, Info and so on
 type Logger interface {
+	Leveler
+	Namer
 	Filter
 
 	// log DebugLevel message
@@ -53,12 +65,6 @@ type Logger interface {
 
 	// log CriticalLevel message
 	Critical(f string, v ...interface{})
-
-	// Name return the name of Logger
-	Name() string
-
-	// Level return the LogLevel of Logger
-	Level() LogLevel
 
 	AddHandler(h Handler)
 }
@@ -88,7 +94,19 @@ func (lm *loggerMapper) GetLogger(name string) Logger {
 	return lm.mapper[name]
 }
 
-func (lm *loggerMapper) registerLogger(l Logger) {
+func (lm *loggerMapper) UnRegisterLogger(l Logger) {
+	lm.mu.Lock()
+	defer lm.mu.Unlock()
+	delete(lm.mapper, l.Name())
+}
+
+func (lm *loggerMapper) UnRegisterLoggerByName(name string) {
+	lm.mu.Lock()
+	defer lm.mu.Unlock()
+	delete(lm.mapper, name)
+}
+
+func (lm *loggerMapper) RegisterLogger(l Logger) {
 	lm.mu.Lock()
 	defer lm.mu.Unlock()
 	_, ok := lm.mapper[l.Name()]
@@ -104,8 +122,16 @@ func GetLogger(name string) Logger {
 	return lm.GetLogger(name)
 }
 
-func registerLogger(l Logger) {
-	lm.registerLogger(l)
+func UnRegisterLogger(l Logger) {
+	lm.UnRegisterLogger(l)
+}
+
+func UnRegisterLoggerByName(name string) {
+	lm.UnRegisterLoggerByName(name)
+}
+
+func RegisterLogger(l Logger) {
+	lm.RegisterLogger(l)
 }
 
 // gLogger is the default Logger
@@ -125,7 +151,7 @@ func New(name string, level LogLevel) Logger {
 		name:  name,
 		level: level,
 	}
-	registerLogger(l)
+	RegisterLogger(l)
 	return l
 }
 
@@ -176,4 +202,14 @@ func (l *gLogger) Name() string {
 
 func (l *gLogger) Level() LogLevel {
 	return l.level
+}
+
+func (l *gLogger) SetName(name string) {
+	UnRegisterLogger(l)
+	l.name = name
+	RegisterLogger(l)
+}
+
+func (l *gLogger) SetLevel(level LogLevel) {
+	l.level = level
 }
