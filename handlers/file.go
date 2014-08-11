@@ -17,26 +17,28 @@
 package handlers
 
 import (
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"os"
-	"path/filepath"
 
 	"github.com/Xuyuanp/glogger"
 )
+
+func init() {
+	glogger.RegisterConfigLoaderBuilder("github.com/Xuyuanp/glogger/handlers.FileHandler", func() glogger.ConfigLoader {
+		return NewFileHandler()
+	})
+}
 
 type FileHandler struct {
 	*StreamHandler
 	FileName string
 }
 
-func NewFileHandler(name string, level glogger.LogLevel, formatter glogger.Formatter, fileName string) *FileHandler {
-	fileName, err := filepath.Abs(fileName)
-	if err != nil {
-		return nil
-	}
+func NewFileHandler() *FileHandler {
 	fh := &FileHandler{
-		StreamHandler: NewStreamHandler(name, level, formatter, nil),
-		FileName:      fileName,
+		StreamHandler: NewStreamHandler(),
 	}
 	return fh
 }
@@ -51,4 +53,35 @@ func (fh *FileHandler) Emit(text string) {
 		fh.Writer = file
 	}
 	fh.StreamHandler.Emit(text)
+}
+
+func (fh *FileHandler) LoadConfig(config []byte) {
+	var m map[string]interface{}
+	err := json.Unmarshal(config, &m)
+	if err != nil {
+		panic(err)
+	}
+	fh.LoadConfigFromMap(m)
+}
+
+func (fh *FileHandler) LoadConfigFromMap(config map[string]interface{}) {
+	fh.GenericHandler.LoadConfigFromMap(config)
+	filename, ok := config["filename"]
+	if ok {
+		fh.FileName = filename.(string)
+	}
+}
+
+func (fh *FileHandler) LoadConfigFromFile(fileName string) {
+	file, err := os.Open(fileName)
+	if err != nil {
+		panic(err)
+	}
+	defer file.Close()
+
+	code, err := ioutil.ReadAll(file)
+	if err != nil {
+		panic(err)
+	}
+	fh.LoadConfig(code)
 }

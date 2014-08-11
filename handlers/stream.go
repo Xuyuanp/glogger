@@ -17,24 +17,68 @@
 package handlers
 
 import (
+	"encoding/json"
 	"io"
+	"io/ioutil"
+	"os"
 
 	"github.com/Xuyuanp/glogger"
 )
+
+func init() {
+	glogger.RegisterConfigLoaderBuilder("github.com/Xuyuanp/glogger/handlers.StreamHandler", func() glogger.ConfigLoader {
+		return NewStreamHandler()
+	})
+}
 
 type StreamHandler struct {
 	*GenericHandler
 	Writer io.Writer
 }
 
-func NewStreamHandler(name string, level glogger.LogLevel, formatter glogger.Formatter, w io.Writer) *StreamHandler {
+func NewStreamHandler() *StreamHandler {
 	sh := &StreamHandler{
-		GenericHandler: NewHandler(name, level, formatter),
-		Writer:         w,
+		GenericHandler: new(GenericHandler),
 	}
 	return sh
 }
 
 func (sh *StreamHandler) Emit(text string) {
 	sh.Writer.Write([]byte(text + "\n"))
+}
+
+func (sh *StreamHandler) LoadConfig(config []byte) {
+	var m map[string]interface{}
+	err := json.Unmarshal(config, &m)
+	if err != nil {
+		panic(err)
+	}
+	sh.LoadConfigFromMap(m)
+}
+
+var writerMap = map[string]io.Writer{
+	"stdout": os.Stdout,
+	"stderr": os.Stderr,
+}
+
+func (sh *StreamHandler) LoadConfigFromMap(config map[string]interface{}) {
+	sh.GenericHandler.LoadConfigFromMap(config)
+	writer, ok := config["writer"]
+	if ok {
+		sh.Writer = writerMap[writer.(string)]
+	}
+}
+
+func (sh *StreamHandler) LoadConfigFromFile(fileName string) {
+	file, err := os.Open(fileName)
+	if err != nil {
+		panic(err)
+	}
+	defer file.Close()
+
+	code, err := ioutil.ReadAll(file)
+	if err != nil {
+		panic(err)
+	}
+	sh.LoadConfig(code)
 }

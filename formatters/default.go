@@ -28,17 +28,9 @@ import (
 )
 
 func init() {
-	glogger.RegisterConfigLoaderBuilder("github/Xuyuanp/glogger/formatters.DefaultFormatter", func() glogger.ConfigLoader {
+	glogger.RegisterConfigLoaderBuilder("github.com/Xuyuanp/glogger/formatters.DefaultFormatter", func() glogger.ConfigLoader {
 		return NewDefaultFormatter()
 	})
-}
-
-var LevelMap = map[glogger.LogLevel]string{
-	glogger.DebugLevel:    "DBUG",
-	glogger.InfoLevel:     "INFO",
-	glogger.WarnLevel:     "WARN",
-	glogger.ErrorLevel:    "ERRO",
-	glogger.CriticalLevel: "CRIT",
 }
 
 type DefaultFormatter struct {
@@ -66,7 +58,7 @@ func (df *DefaultFormatter) Format(rec *glogger.Record) string {
 		"name":      rec.Name,
 		"time":      rec.Time.Format(df.TimeFmt),
 		"levelno":   rec.Level,
-		"levelname": LevelMap[rec.Level],
+		"levelname": glogger.LevelToString[rec.Level],
 		"lfile":     rec.LFile,
 		"sfile":     rec.SFile,
 		"func":      rec.Func,

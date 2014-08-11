@@ -18,6 +18,8 @@ package glogger
 
 import (
 	"encoding/json"
+	"io/ioutil"
+	"os"
 	"sync"
 )
 
@@ -117,6 +119,7 @@ func LoadConfig(config []byte) {
 		for name, conf := range handlers {
 			process(name, conf, func(loader ConfigLoader) {
 				handler := loader.(Handler)
+				handler.SetName(name)
 				RegisterHandler(name, handler)
 			})
 		}
@@ -129,4 +132,18 @@ func LoadConfig(config []byte) {
 			logger.SetName(name)
 		}
 	}
+}
+
+func LoadConfigFromFile(fileName string) {
+	file, err := os.Open(fileName)
+	if err != nil {
+		panic(err)
+	}
+	defer file.Close()
+
+	code, err := ioutil.ReadAll(file)
+	if err != nil {
+		panic(err)
+	}
+	LoadConfig(code)
 }

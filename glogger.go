@@ -33,6 +33,22 @@ const (
 	CriticalLevel
 )
 
+var LevelToString = map[LogLevel]string{
+	DebugLevel:    "DBUG",
+	InfoLevel:     "INFO",
+	WarnLevel:     "WARN",
+	ErrorLevel:    "ERRO",
+	CriticalLevel: "CRIT",
+}
+
+var StringToLevel = map[string]LogLevel{
+	"DEBUG":    DebugLevel,
+	"INFO":     InfoLevel,
+	"WARNING":  WarnLevel,
+	"ERROR":    ErrorLevel,
+	"CRITICAL": CriticalLevel,
+}
+
 type Namer interface {
 	Name() string
 	SetName(name string)

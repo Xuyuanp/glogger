@@ -17,6 +17,9 @@
 package handlers
 
 import (
+	"encoding/json"
+	"io/ioutil"
+	"os"
 	"sync"
 
 	"github.com/Xuyuanp/glogger"
@@ -66,13 +69,39 @@ func (gh *GenericHandler) Mutex() *sync.Mutex {
 }
 
 func (gh *GenericHandler) LoadConfig(config []byte) {
-
+	var m map[string]interface{}
+	err := json.Unmarshal(config, &m)
+	if err != nil {
+		panic(err)
+	}
+	gh.LoadConfigFromMap(m)
 }
 
 func (gh *GenericHandler) LoadConfigFromMap(config map[string]interface{}) {
-
+	name, ok := config["name"]
+	if ok {
+		gh.name = name.(string)
+	}
+	level, ok := config["level"]
+	if ok {
+		gh.level = glogger.StringToLevel[level.(string)]
+	}
+	formatter, ok := config["formatter"]
+	if ok {
+		gh.formatter = glogger.GetFormatter(formatter.(string))
+	}
 }
 
 func (gh *GenericHandler) LoadConfigFromFile(fileName string) {
+	file, err := os.Open(fileName)
+	if err != nil {
+		panic(err)
+	}
+	defer file.Close()
 
+	code, err := ioutil.ReadAll(file)
+	if err != nil {
+		panic(err)
+	}
+	gh.LoadConfig(code)
 }

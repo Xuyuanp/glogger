@@ -17,7 +17,10 @@
 package glogger
 
 import (
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"os"
 	"runtime"
 	"time"
 )
@@ -103,13 +106,42 @@ func (l *gLogger) SetLevel(level LogLevel) {
 }
 
 func (l *gLogger) LoadConfig(config []byte) {
-
+	var m map[string]interface{}
+	err := json.Unmarshal(config, &m)
+	if err != nil {
+		panic(err)
+	}
+	l.LoadConfigFromMap(m)
 }
 
 func (l *gLogger) LoadConfigFromMap(config map[string]interface{}) {
-
+	name, ok := config["name"]
+	if ok {
+		l.SetName(name.(string))
+	}
+	level, ok := config["level"]
+	if ok {
+		l.level = StringToLevel[level.(string)]
+	}
+	handlers, ok := config["handlers"]
+	if ok {
+		for _, hname := range handlers.([]interface{}) {
+			handler := GetHandler(hname.(string))
+			l.AddHandler(handler)
+		}
+	}
 }
 
 func (l *gLogger) LoadConfigFromFile(fileName string) {
+	file, err := os.Open(fileName)
+	if err != nil {
+		panic(err)
+	}
+	defer file.Close()
 
+	code, err := ioutil.ReadAll(file)
+	if err != nil {
+		panic(err)
+	}
+	l.LoadConfig(code)
 }

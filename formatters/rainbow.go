@@ -25,7 +25,7 @@ import (
 )
 
 func init() {
-	glogger.RegisterConfigLoaderBuilder("github/Xuyuanp/glogger/formatters.RainbowFormatter", func() glogger.ConfigLoader {
+	glogger.RegisterConfigLoaderBuilder("github.com/Xuyuanp/glogger/formatters.RainbowFormatter", func() glogger.ConfigLoader {
 		return NewRainbowFormatter()
 	})
 }
@@ -86,23 +86,23 @@ func (rf *RainbowFormatter) LoadConfig(config []byte) {
 }
 
 func (rf *RainbowFormatter) LoadConfigFromMap(config map[string]interface{}) {
-	format, ok := config["fmt"]
+	fmt, ok := config["fmt"]
 	if ok {
-		rf.Fmt = format.(string)
+		rf.Fmt = fmt.(string)
 	}
 	timefmt, ok := config["timefmt"]
 	if ok {
 		rf.TimeFmt = timefmt.(string)
 	}
-
 	colors, ok := config["colors"]
 	if ok {
 		colorConfig := colors.(map[string]interface{})
-		rf.LevelColors[glogger.DebugLevel] = colorConfig["DEBUG"].(string)
-		rf.LevelColors[glogger.InfoLevel] = colorConfig["INFO"].(string)
-		rf.LevelColors[glogger.WarnLevel] = colorConfig["WARNING"].(string)
-		rf.LevelColors[glogger.ErrorLevel] = colorConfig["ERROR"].(string)
-		rf.LevelColors[glogger.CriticalLevel] = colorConfig["CRITICAL"].(string)
+		for name, level := range glogger.StringToLevel {
+			colori, yes := colorConfig[name]
+			if yes {
+				rf.LevelColors[level] = colori.(string)
+			}
+		}
 	}
 }
 
