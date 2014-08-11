@@ -17,5 +17,6 @@
 package glogger
 
 type Formatter interface {
+	ConfigLoader
 	Format(rec *Record) string
 }

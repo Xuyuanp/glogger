@@ -64,3 +64,15 @@ func (gh *GenericHandler) SetLevel(level glogger.LogLevel) {
 func (gh *GenericHandler) Mutex() *sync.Mutex {
 	return &(gh.mu)
 }
+
+func (gh *GenericHandler) LoadConfig(config []byte) {
+
+}
+
+func (gh *GenericHandler) LoadConfigFromMap(config map[string]interface{}) {
+
+}
+
+func (gh *GenericHandler) LoadConfigFromFile(fileName string) {
+
+}

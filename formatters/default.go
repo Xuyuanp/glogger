@@ -77,3 +77,15 @@ func (df *DefaultFormatter) Format(rec *glogger.Record) string {
 
 	return fmt.Sprintf(newFmt, args...)
 }
+
+func (df *DefaultFormatter) LoadConfig(config []byte) {
+
+}
+
+func (df *DefaultFormatter) LoadConfigFromMap(config map[string]interface{}) {
+
+}
+
+func (df *DefaultFormatter) LoadConfigFromFile(fileName string) {
+
+}

@@ -101,3 +101,15 @@ func (l *gLogger) SetName(name string) {
 func (l *gLogger) SetLevel(level LogLevel) {
 	l.level = level
 }
+
+func (l *gLogger) LoadConfig(config []byte) {
+
+}
+
+func (l *gLogger) LoadConfigFromMap(config map[string]interface{}) {
+
+}
+
+func (l *gLogger) LoadConfigFromFile(fileName string) {
+
+}
