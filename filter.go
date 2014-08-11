@@ -19,7 +19,7 @@ package glogger
 import "container/list"
 
 type Filter interface {
-	DoFilter(rec *Record) bool
+	Filter(rec *Record) bool
 }
 
 type GroupFilter struct {
@@ -33,13 +33,13 @@ func (f *GroupFilter) AddFilter(ft Filter) {
 	f.filters.PushBack(ft)
 }
 
-func (f *GroupFilter) DoFilter(rec *Record) bool {
+func (f *GroupFilter) Filter(rec *Record) bool {
 	if f.filters == nil {
 		return true
 	}
 	for e := f.filters.Front(); e != nil; e = e.Next() {
 		filter := e.Value.(Filter)
-		if !filter.DoFilter(rec) {
+		if !filter.Filter(rec) {
 			return false
 		}
 	}

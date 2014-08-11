@@ -49,7 +49,7 @@ func (hm *handlerManger) Handle(rec *Record) {
 	for e := hm.handlers.Front(); e != nil; e = e.Next() {
 		var h Handler = e.Value.(Handler)
 		func() {
-			if rec.Level < h.Level() || !h.DoFilter(rec) {
+			if rec.Level < h.Level() || !h.Filter(rec) {
 				return
 			}
 			h.Mutex().Lock()

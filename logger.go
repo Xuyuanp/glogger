@@ -78,7 +78,7 @@ func (l *gLogger) log(level LogLevel, msg string) {
 		funcname = runtime.FuncForPC(pc).Name()
 	}
 	rec := NewRecord(l.name, now, level, file, funcname, line, msg)
-	if !l.DoFilter(rec) {
+	if !l.Filter(rec) {
 		return
 	}
 	l.Handle(rec)
