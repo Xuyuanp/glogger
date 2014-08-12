@@ -1,6 +1,8 @@
 glogger
 =======
 
+[![GoDoc](https://godoc.org/github.com/Xuyuanp/glogger?status.svg)](https://godoc.org/github.com/Xuyuanp/glogger)
+
 A python-like logging library for go
 
 ## Be Carefull!!!
