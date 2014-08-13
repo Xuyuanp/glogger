@@ -35,11 +35,9 @@ type GenericHandler struct {
 	mu        sync.Mutex
 }
 
-func NewHandler(name string, level glogger.LogLevel, formatter glogger.Formatter) *GenericHandler {
+func NewHandler() *GenericHandler {
 	gh := &GenericHandler{
-		name:      name,
-		level:     level,
-		formatter: formatter,
+		level: glogger.DebugLevel,
 	}
 	return gh
 }

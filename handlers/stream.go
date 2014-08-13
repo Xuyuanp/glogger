@@ -38,13 +38,18 @@ type StreamHandler struct {
 
 func NewStreamHandler() *StreamHandler {
 	sh := &StreamHandler{
-		GenericHandler: new(GenericHandler),
+		GenericHandler: NewHandler(),
 	}
 	return sh
 }
 
 func (sh *StreamHandler) Emit(text string) {
 	sh.Writer.Write([]byte(text + "\n"))
+}
+
+var writerMap = map[string]io.Writer{
+	"stdout": os.Stdout,
+	"stderr": os.Stderr,
 }
 
 func (sh *StreamHandler) LoadConfig(config []byte) {
@@ -56,15 +61,9 @@ func (sh *StreamHandler) LoadConfig(config []byte) {
 	sh.LoadConfigFromMap(m)
 }
 
-var writerMap = map[string]io.Writer{
-	"stdout": os.Stdout,
-	"stderr": os.Stderr,
-}
-
 func (sh *StreamHandler) LoadConfigFromMap(config map[string]interface{}) {
 	sh.GenericHandler.LoadConfigFromMap(config)
-	writer, ok := config["writer"]
-	if ok {
+	if writer, ok := config["writer"]; ok {
 		sh.Writer = writerMap[writer.(string)]
 	}
 }

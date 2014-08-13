@@ -18,7 +18,9 @@ package handlers
 
 import (
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/smtp"
 	"os"
 	"strings"
@@ -26,53 +28,106 @@ import (
 	"github.com/Xuyuanp/glogger"
 )
 
-type SmtpHandler struct {
-	*GenericHandler
-	Host    string
-	Port    int
-	From    string
-	To      []string
-	Auth    smtp.Auth
-	Subject string
+func init() {
+	glogger.RegisterConfigLoaderBuilder("github.com/Xuyuanp/glogger/handlers.SmtpHandler", func() glogger.ConfigLoader {
+		return NewSmtpHandler()
+	})
 }
 
-func NewSmtpHandler(name string, level glogger.LogLevel, formatter glogger.Formatter, host string, port int, from string, to []string, auth smtp.Auth, subject string) *SmtpHandler {
+type SmtpHandler struct {
+	*GenericHandler
+	Address  string
+	Username string
+	Password string
+	To       []string
+	Subject  string
+}
+
+func NewSmtpHandler() *SmtpHandler {
 	sh := &SmtpHandler{
-		GenericHandler: NewHandler(name, level, formatter),
-		Host:           host,
-		Port:           port,
-		From:           from,
-		To:             to,
-		Auth:           auth,
-		Subject:        subject,
+		GenericHandler: NewHandler(),
 	}
 	return sh
 }
 
 func (sh *SmtpHandler) Emit(text string) {
 	header := make(map[string]string)
-	header["From"] = sh.From
+	header["From"] = sh.Username
 	header["To"] = strings.Join(sh.To, ";")
 	header["Subject"] = sh.Subject
 	header["MIME-Version"] = "1.0"
 	header["Content-Type"] = "text/plain; charset=\"utf-8\""
 	header["Content-Transfer-Encoding"] = "base64"
 
+	auth := smtp.PlainAuth("", sh.Username, sh.Password, strings.Split(sh.Address, ":")[0])
+
 	message := ""
 	for k, v := range header {
-		message += fmt.Sprintf("%s: %s\t\n", k, v)
+		message += fmt.Sprintf("%s: %s\r\n", k, v)
 	}
 
-	message += "\t\n" + base64.StdEncoding.EncodeToString([]byte(text))
+	message += "\r\n\r\n" + base64.StdEncoding.EncodeToString([]byte(text))
 
 	err := smtp.SendMail(
-		fmt.Sprintf("%s:%d", sh.Host, sh.Port),
-		sh.Auth,
-		sh.From,
+		sh.Address,
+		auth,
+		sh.Username,
 		sh.To,
 		[]byte(message),
 	)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err.Error())
 	}
+}
+
+func (sh *SmtpHandler) LoadConfig(config []byte) {
+	var m map[string]interface{}
+	err := json.Unmarshal(config, &m)
+	if err != nil {
+		panic(err)
+	}
+	sh.LoadConfigFromMap(m)
+}
+
+func (sh *SmtpHandler) LoadConfigFromMap(config map[string]interface{}) {
+	sh.GenericHandler.LoadConfigFromMap(config)
+	if address, ok := config["address"]; ok {
+		sh.Address = address.(string)
+	} else {
+		panic("'address' is required")
+	}
+	if username, ok := config["username"]; ok {
+		sh.Username = username.(string)
+	} else {
+		panic("'username' field is required")
+	}
+	if password, ok := config["password"]; ok {
+		sh.Password = password.(string)
+	} else {
+		panic("'password' field is required")
+	}
+	if to, ok := config["to"]; ok {
+		sh.To = strings.Split(to.(string), ";")
+	} else {
+		panic("'to' field is required")
+	}
+	if subject, ok := config["subject"]; ok {
+		sh.Subject = subject.(string)
+	} else {
+		panic("'subject' field is required")
+	}
+}
+
+func (sh *SmtpHandler) LoadConfigFromFile(fileName string) {
+	file, err := os.Open(fileName)
+	if err != nil {
+		panic(err)
+	}
+	defer file.Close()
+
+	code, err := ioutil.ReadAll(file)
+	if err != nil {
+		panic(err)
+	}
+	sh.LoadConfig(code)
 }

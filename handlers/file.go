@@ -66,8 +66,7 @@ func (fh *FileHandler) LoadConfig(config []byte) {
 
 func (fh *FileHandler) LoadConfigFromMap(config map[string]interface{}) {
 	fh.GenericHandler.LoadConfigFromMap(config)
-	filename, ok := config["filename"]
-	if ok {
+	if filename, ok := config["filename"]; ok {
 		fh.FileName = filename.(string)
 	}
 }
