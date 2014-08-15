@@ -68,6 +68,8 @@ func (fh *FileHandler) LoadConfigFromMap(config map[string]interface{}) {
 	fh.GenericHandler.LoadConfigFromMap(config)
 	if filename, ok := config["filename"]; ok {
 		fh.FileName = filename.(string)
+	} else {
+		panic("'filename' field is required")
 	}
 }
 

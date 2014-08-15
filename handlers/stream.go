@@ -64,7 +64,13 @@ func (sh *StreamHandler) LoadConfig(config []byte) {
 func (sh *StreamHandler) LoadConfigFromMap(config map[string]interface{}) {
 	sh.GenericHandler.LoadConfigFromMap(config)
 	if writer, ok := config["writer"]; ok {
-		sh.Writer = writerMap[writer.(string)]
+		if w, ok := writerMap[writer.(string)]; ok {
+			sh.Writer = w
+		} else {
+			panic("unknown writer: " + writer.(string))
+		}
+	} else {
+		panic("'writer' field is required")
 	}
 }
 

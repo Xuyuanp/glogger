@@ -94,7 +94,7 @@ func (sh *SmtpHandler) LoadConfigFromMap(config map[string]interface{}) {
 	if address, ok := config["address"]; ok {
 		sh.Address = address.(string)
 	} else {
-		panic("'address' is required")
+		panic("'address' field is required")
 	}
 	if username, ok := config["username"]; ok {
 		sh.Username = username.(string)

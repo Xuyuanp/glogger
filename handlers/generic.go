@@ -76,17 +76,26 @@ func (gh *GenericHandler) LoadConfig(config []byte) {
 }
 
 func (gh *GenericHandler) LoadConfigFromMap(config map[string]interface{}) {
-	name, ok := config["name"]
-	if ok {
+	if name, ok := config["name"]; ok {
 		gh.name = name.(string)
 	}
-	level, ok := config["level"]
-	if ok {
-		gh.level = glogger.StringToLevel[level.(string)]
+	if level, ok := config["level"]; ok {
+		if l, ok := glogger.StringToLevel[level.(string)]; ok {
+			gh.level = l
+		} else {
+			panic("unknown level: " + level.(string))
+		}
+	} else {
+		panic("'level' field is required")
 	}
-	formatter, ok := config["formatter"]
-	if ok {
-		gh.formatter = glogger.GetFormatter(formatter.(string))
+	if formatter, ok := config["formatter"]; ok {
+		if f := glogger.GetFormatter(formatter.(string)); f != nil {
+			gh.formatter = f
+		} else {
+			panic("unknown formater name: " + formatter.(string))
+		}
+	} else {
+		panic("'formater' field is required")
 	}
 }
 

@@ -86,21 +86,19 @@ func (rf *RainbowFormatter) LoadConfig(config []byte) {
 }
 
 func (rf *RainbowFormatter) LoadConfigFromMap(config map[string]interface{}) {
-	fmt, ok := config["fmt"]
-	if ok {
+	if fmt, ok := config["fmt"]; ok {
 		rf.Fmt = fmt.(string)
 	}
-	timefmt, ok := config["timefmt"]
-	if ok {
+	if timefmt, ok := config["timefmt"]; ok {
 		rf.TimeFmt = timefmt.(string)
 	}
-	colors, ok := config["colors"]
-	if ok {
+	if colors, ok := config["colors"]; ok {
 		colorConfig := colors.(map[string]interface{})
 		for name, level := range glogger.StringToLevel {
-			colori, yes := colorConfig[name]
-			if yes {
+			if colori, yes := colorConfig[name]; yes {
 				rf.LevelColors[level] = colori.(string)
+			} else {
+				panic("unknown color: " + name)
 			}
 		}
 	}
