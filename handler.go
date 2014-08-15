@@ -18,44 +18,78 @@ package glogger
 
 import (
 	"container/list"
-	"encoding/base64"
-	"fmt"
-	"io"
-	"net/smtp"
-	"os"
-	"path/filepath"
-	"strings"
+
 	"sync"
 )
 
+func init() {
+	onceHandlerManager.Do(initHandlermanager)
+}
+
+// Handler determines where the log message to output
 type Handler interface {
+	Namer
+	Leveler
 	Filter
 	Emit(log string)
 	Format(rec *Record) string
-	Level() LogLevel
 	Mutex() *sync.Mutex
-	Name() string
 }
 
-type handlerManger struct {
+type handlerManager struct {
+	mapper map[string]Handler
+	mu     sync.RWMutex
+}
+
+var hdlManager *handlerManager
+var onceHandlerManager sync.Once
+
+func initHandlermanager() {
+	hdlManager = &handlerManager{
+		mapper: map[string]Handler{},
+	}
+}
+
+// RegisterHandler register a Handler to global manager with specific name.
+// The Handler registered can be accessed by GetHandler method anywhere with this name.
+// It will panic if this name has been registered twice.
+func RegisterHandler(name string, handler Handler) {
+	hdlManager.mu.Lock()
+	defer hdlManager.mu.Unlock()
+	_, dup := hdlManager.mapper[name]
+	if dup {
+		panic("Register Handler named " + name + " twice")
+	}
+	hdlManager.mapper[name] = handler
+}
+
+// GetHandler return the Handler registered with this name.
+// nil will by returned if no Handler registered with this name.
+func GetHandler(name string) Handler {
+	hdlManager.mu.RLock()
+	defer hdlManager.mu.RUnlock()
+	return hdlManager.mapper[name]
+}
+
+type handlerGroup struct {
 	handlers *list.List
 }
 
-func (hm *handlerManger) AddHandler(h Handler) {
-	if hm.handlers == nil {
-		hm.handlers = list.New()
+func (hg *handlerGroup) AddHandler(h Handler) {
+	if hg.handlers == nil {
+		hg.handlers = list.New()
 	}
-	hm.handlers.PushBack(h)
+	hg.handlers.PushBack(h)
 }
 
-func (hm *handlerManger) Handle(rec *Record) {
-	if hm.handlers == nil {
+func (hg *handlerGroup) Handle(rec *Record) {
+	if hg.handlers == nil {
 		return
 	}
-	for e := hm.handlers.Front(); e != nil; e = e.Next() {
-		var h Handler = e.Value.(Handler)
+	for e := hg.handlers.Front(); e != nil; e = e.Next() {
+		var h = e.Value.(Handler)
 		func() {
-			if rec.Level < h.Level() || !h.DoFilter(rec) {
+			if rec.Level < h.Level() || !h.Filter(rec) {
 				return
 			}
 			h.Mutex().Lock()
@@ -63,137 +97,5 @@ func (hm *handlerManger) Handle(rec *Record) {
 			log := h.Format(rec)
 			h.Emit(log)
 		}()
-	}
-}
-
-// GenericHandler is an abstract struct which fully implemented Handler interface
-// expected Emit method.
-type GenericHandler struct {
-	GroupFilter
-	level     LogLevel
-	name      string
-	formatter Formatter
-	mu        sync.Mutex
-}
-
-func NewHandler(name string, level LogLevel, formatter Formatter) *GenericHandler {
-	gh := &GenericHandler{
-		name:      name,
-		level:     level,
-		formatter: formatter,
-	}
-	return gh
-}
-
-func (gh *GenericHandler) Format(rec *Record) string {
-	return gh.formatter.Format(rec)
-}
-
-func (gh *GenericHandler) Level() LogLevel {
-	return gh.level
-}
-
-func (gh *GenericHandler) Mutex() *sync.Mutex {
-	return &(gh.mu)
-}
-
-func (gh *GenericHandler) Name() string {
-	return gh.name
-}
-
-type StreamHandler struct {
-	*GenericHandler
-	Writer io.Writer
-}
-
-func NewStreamHandler(name string, level LogLevel, formatter Formatter, w io.Writer) *StreamHandler {
-	sh := &StreamHandler{
-		GenericHandler: NewHandler(name, level, formatter),
-		Writer:         w,
-	}
-	return sh
-}
-
-func (sh *StreamHandler) Emit(text string) {
-	sh.Writer.Write([]byte(text + "\n"))
-}
-
-type FileHandler struct {
-	*StreamHandler
-	FileName string
-}
-
-func NewFileHandler(name string, level LogLevel, formatter Formatter, fileName string) *FileHandler {
-	fileName, err := filepath.Abs(fileName)
-	if err != nil {
-		return nil
-	}
-	fh := &FileHandler{
-		StreamHandler: NewStreamHandler(name, level, formatter, nil),
-		FileName:      fileName,
-	}
-	return fh
-}
-
-func (fh *FileHandler) Emit(text string) {
-	if fh.Writer == nil {
-		file, err := os.OpenFile(fh.FileName, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0640)
-		if err != nil {
-			fmt.Fprintln(os.Stderr, err)
-			return
-		}
-		fh.Writer = file
-	}
-	fh.StreamHandler.Emit(text)
-}
-
-type SmtpHandler struct {
-	*GenericHandler
-	Host    string
-	Port    int
-	From    string
-	To      []string
-	Auth    smtp.Auth
-	Subject string
-}
-
-func NewSmtpHandler(name string, level LogLevel, formatter Formatter, host string, port int, from string, to []string, auth smtp.Auth, subject string) *SmtpHandler {
-	sh := &SmtpHandler{
-		GenericHandler: NewHandler(name, level, formatter),
-		Host:           host,
-		Port:           port,
-		From:           from,
-		To:             to,
-		Auth:           auth,
-		Subject:        subject,
-	}
-	return sh
-}
-
-func (sh *SmtpHandler) Emit(text string) {
-	header := make(map[string]string)
-	header["From"] = sh.From
-	header["To"] = strings.Join(sh.To, ";")
-	header["Subject"] = sh.Subject
-	header["MIME-Version"] = "1.0"
-	header["Content-Type"] = "text/plain; charset=\"utf-8\""
-	header["Content-Transfer-Encoding"] = "base64"
-
-	message := ""
-	for k, v := range header {
-		message += fmt.Sprintf("%s: %s\t\n", k, v)
-	}
-
-	message += "\t\n" + base64.StdEncoding.EncodeToString([]byte(text))
-
-	err := smtp.SendMail(
-		fmt.Sprintf("%s:%d", sh.Host, sh.Port),
-		sh.Auth,
-		sh.From,
-		sh.To,
-		[]byte(message),
-	)
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err.Error())
 	}
 }

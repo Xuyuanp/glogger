@@ -1,0 +1,159 @@
+/*
+ * Copyright 2014 Xuyuan Pang <xuyuanp@gmail.com>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package glogger
+
+import (
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
+	"os"
+	"runtime"
+	"time"
+)
+
+// gLogger is the default Logger
+type gLogger struct {
+	GroupFilter
+	handlerGroup
+	name  string
+	level LogLevel
+}
+
+// New return a new Logger.
+// name is the logger's name, it should be unique.
+// level is the logger's level, all the logs with level lower than this will be ignore
+// New will panic if this name has been registered.
+func New(name string, level LogLevel) Logger {
+	l := &gLogger{
+		name:  name,
+		level: level,
+	}
+	RegisterLogger(l)
+	return l
+}
+
+// Debug see details in Logger interface
+func (l *gLogger) Debug(f string, v ...interface{}) {
+	l.log(DebugLevel, fmt.Sprintf(f, v...))
+}
+
+// Info see details in Logger interface
+func (l *gLogger) Info(f string, v ...interface{}) {
+	l.log(InfoLevel, fmt.Sprintf(f, v...))
+}
+
+// Warning see details in Logger interface
+func (l *gLogger) Warning(f string, v ...interface{}) {
+	l.log(WarnLevel, fmt.Sprintf(f, v...))
+}
+
+// Error see details in Logger interface
+func (l *gLogger) Error(f string, v ...interface{}) {
+	l.log(ErrorLevel, fmt.Sprintf(f, v...))
+}
+
+// Critical see details in Logger interface
+func (l *gLogger) Critical(f string, v ...interface{}) {
+	l.log(CriticalLevel, fmt.Sprintf(f, v...))
+}
+
+func (l *gLogger) log(level LogLevel, msg string) {
+	if level < l.level {
+		return
+	}
+	now := time.Now()
+	pc, file, line, ok := runtime.Caller(2)
+	var funcname string
+	if !ok {
+		file = "???"
+		line = 0
+		funcname = "???"
+	} else {
+		funcname = runtime.FuncForPC(pc).Name()
+	}
+	rec := NewRecord(l.name, now, level, file, funcname, line, msg)
+	if !l.Filter(rec) {
+		return
+	}
+	l.Handle(rec)
+}
+
+func (l *gLogger) Name() string {
+	return l.name
+}
+
+func (l *gLogger) Level() LogLevel {
+	return l.level
+}
+
+// SetName rename logger'name
+// Remember unregister this logger before,
+// and register loger after SetName
+func (l *gLogger) SetName(name string) {
+	l.name = name
+}
+
+func (l *gLogger) SetLevel(level LogLevel) {
+	l.level = level
+}
+
+func (l *gLogger) LoadConfig(config []byte) {
+	var m map[string]interface{}
+	if err := json.Unmarshal(config, &m); err == nil {
+		l.LoadConfigFromMap(m)
+	} else {
+		panic(err)
+	}
+}
+
+func (l *gLogger) LoadConfigFromMap(config map[string]interface{}) {
+	if name, ok := config["name"]; ok {
+		l.SetName(name.(string))
+	}
+	if level, ok := config["level"]; ok {
+		l.level = StringToLevel[level.(string)]
+	} else {
+		panic("'level' field is required")
+	}
+	if handlers, ok := config["handlers"]; ok {
+		if len(handlers.([]interface{})) == 0 {
+			panic("handler name is required")
+		}
+		for _, hname := range handlers.([]interface{}) {
+			if handler := GetHandler(hname.(string)); handler != nil {
+				l.AddHandler(handler)
+			} else {
+				panic("unknown handler name: " + hname.(string))
+			}
+		}
+	} else {
+		panic("'handlers' field is required")
+	}
+}
+
+func (l *gLogger) LoadConfigFromFile(fileName string) {
+	if file, err := os.Open(fileName); err == nil {
+		defer file.Close()
+		if code, err := ioutil.ReadAll(file); err == nil {
+			l.LoadConfig(code)
+		} else {
+			panic(err)
+		}
+	} else {
+		panic(err)
+	}
+}

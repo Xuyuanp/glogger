@@ -18,15 +18,13 @@ package glogger
 
 import (
 	"fmt"
-	"runtime"
 	"sync"
-	"time"
 )
 
 // LogLevel type
 type LogLevel uint8
 
-// log message level
+// LogLevel values
 const (
 	DebugLevel LogLevel = iota
 	InfoLevel
@@ -35,8 +33,40 @@ const (
 	CriticalLevel
 )
 
-// Logger is an interface supported functions like Debug, Info and so on
+// LevelToString is a map to translate LogLevel to a level name string
+var LevelToString = map[LogLevel]string{
+	DebugLevel:    "DBUG",
+	InfoLevel:     "INFO",
+	WarnLevel:     "WARN",
+	ErrorLevel:    "ERRO",
+	CriticalLevel: "CRIT",
+}
+
+// StringToLevel is a map to translate level name to LogLevel type
+var StringToLevel = map[string]LogLevel{
+	"DEBUG":    DebugLevel,
+	"INFO":     InfoLevel,
+	"WARNING":  WarnLevel,
+	"ERROR":    ErrorLevel,
+	"CRITICAL": CriticalLevel,
+}
+
+// Namer is an interface provided set/get name method
+type Namer interface {
+	Name() string
+	SetName(name string)
+}
+
+// Leveler is an interface provided set/get LogLevel method
+type Leveler interface {
+	Level() LogLevel
+	SetLevel(level LogLevel)
+}
+
+// Logger is an interface supported method like Debug, Info and so on
 type Logger interface {
+	Leveler
+	Namer
 	Filter
 
 	// log DebugLevel message
@@ -54,45 +84,50 @@ type Logger interface {
 	// log CriticalLevel message
 	Critical(f string, v ...interface{})
 
-	// Name return the name of Logger
-	Name() string
-
-	// Level return the LogLevel of Logger
-	Level() LogLevel
-
 	AddHandler(h Handler)
 }
 
-type loggerMapper struct {
+type loggerManager struct {
 	mapper map[string]Logger
 	mu     sync.RWMutex
 }
 
-var lm *loggerMapper
+var lm *loggerManager
 var once sync.Once
 
 func init() {
-	// make sure loggerMapper init only once
+	// make sure loggerManager init only once
 	once.Do(setup)
 }
 
 func setup() {
-	lm = &loggerMapper{
-		mapper: map[string]Logger{},
+	lm = &loggerManager{
+		mapper: make(map[string]Logger),
 	}
 }
 
-func (lm *loggerMapper) GetLogger(name string) Logger {
+func (lm *loggerManager) getLogger(name string) Logger {
 	lm.mu.RLock()
 	defer lm.mu.RUnlock()
 	return lm.mapper[name]
 }
 
-func (lm *loggerMapper) registerLogger(l Logger) {
+func (lm *loggerManager) unregisterLogger(l Logger) {
 	lm.mu.Lock()
 	defer lm.mu.Unlock()
-	_, ok := lm.mapper[l.Name()]
-	if ok {
+	delete(lm.mapper, l.Name())
+}
+
+func (lm *loggerManager) unregisterLoggerByName(name string) {
+	lm.mu.Lock()
+	defer lm.mu.Unlock()
+	delete(lm.mapper, name)
+}
+
+func (lm *loggerManager) registerLogger(l Logger) {
+	lm.mu.Lock()
+	defer lm.mu.Unlock()
+	if _, ok := lm.mapper[l.Name()]; ok {
 		panic(fmt.Sprintf("Register logger with name:%s twice", l.Name()))
 	}
 	lm.mapper[l.Name()] = l
@@ -101,79 +136,23 @@ func (lm *loggerMapper) registerLogger(l Logger) {
 // GetLogger return a Logger with name.
 // GetLogger will return nil if there is no Logger with this name
 func GetLogger(name string) Logger {
-	return lm.GetLogger(name)
+	return lm.getLogger(name)
 }
 
-func registerLogger(l Logger) {
+// UnregisterLogger unregister the logger from global manager, this will make the logger
+// unreachable for others. If this Logger hasn't been registered, nothing will happen.
+func UnregisterLogger(l Logger) {
+	lm.unregisterLogger(l)
+}
+
+// UnregisterLoggerByName is like UnregisterLogger, but unregister the Logger by name.
+// If there is no Logger with this name registered before, nothing will happen.
+func UnregisterLoggerByName(name string) {
+	lm.unregisterLoggerByName(name)
+}
+
+// RegisterLogger will register the logger to global manager. The logger registered can be
+// accessed by GetLogger() method with logger's name.
+func RegisterLogger(l Logger) {
 	lm.registerLogger(l)
-}
-
-// gLogger is the default Logger
-type gLogger struct {
-	GroupFilter
-	handlerManger
-	name  string
-	level LogLevel
-}
-
-// New return a new Logger.
-// name means the logger's name, it should be unique.
-// level means the logger's level, all the logs who's level lower than this will be ignore
-// It will panic if this name has been registered.
-func New(name string, level LogLevel) Logger {
-	l := &gLogger{
-		name:  name,
-		level: level,
-	}
-	registerLogger(l)
-	return l
-}
-
-func (l *gLogger) Debug(f string, v ...interface{}) {
-	l.log(DebugLevel, fmt.Sprintf(f, v...))
-}
-
-func (l *gLogger) Info(f string, v ...interface{}) {
-	l.log(InfoLevel, fmt.Sprintf(f, v...))
-}
-
-func (l *gLogger) Warning(f string, v ...interface{}) {
-	l.log(WarnLevel, fmt.Sprintf(f, v...))
-}
-
-func (l *gLogger) Error(f string, v ...interface{}) {
-	l.log(ErrorLevel, fmt.Sprintf(f, v...))
-}
-
-func (l *gLogger) Critical(f string, v ...interface{}) {
-	l.log(CriticalLevel, fmt.Sprintf(f, v...))
-}
-
-func (l *gLogger) log(level LogLevel, msg string) {
-	if level < l.level {
-		return
-	}
-	now := time.Now()
-	pc, file, line, ok := runtime.Caller(2)
-	var funcname string
-	if !ok {
-		file = "???"
-		line = 0
-		funcname = "???"
-	} else {
-		funcname = runtime.FuncForPC(pc).Name()
-	}
-	rec := NewRecord(l.name, now, level, file, funcname, line, msg)
-	if !l.DoFilter(rec) {
-		return
-	}
-	l.Handle(rec)
-}
-
-func (l *gLogger) Name() string {
-	return l.name
-}
-
-func (l *gLogger) Level() LogLevel {
-	return l.level
 }

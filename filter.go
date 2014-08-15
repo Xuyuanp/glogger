@@ -16,10 +16,48 @@
 
 package glogger
 
-import "container/list"
+import (
+	"container/list"
+	"sync"
+)
+
+func init() {
+	onceFilterManager.Do(initFilterManager)
+}
 
 type Filter interface {
-	DoFilter(rec *Record) bool
+	ConfigLoader
+	Filter(rec *Record) bool
+}
+
+type filterManager struct {
+	mapper map[string]Filter
+	mu     sync.RWMutex
+}
+
+var fltManager *filterManager
+var onceFilterManager sync.Once
+
+func initFilterManager() {
+	fltManager = &filterManager{
+		mapper: map[string]Filter{},
+	}
+}
+
+func RegisterFilter(name string, filter Filter) {
+	fltManager.mu.Lock()
+	defer fltManager.mu.Unlock()
+	_, dup := fltManager.mapper[name]
+	if dup {
+		panic("Filter named " + name + " register twice")
+	}
+	fltManager.mapper[name] = filter
+}
+
+func GetFilter(name string) Filter {
+	fltManager.mu.RLock()
+	defer fltManager.mu.RUnlock()
+	return fltManager.mapper[name]
 }
 
 type GroupFilter struct {
@@ -33,15 +71,26 @@ func (f *GroupFilter) AddFilter(ft Filter) {
 	f.filters.PushBack(ft)
 }
 
-func (f *GroupFilter) DoFilter(rec *Record) bool {
+func (f *GroupFilter) Filter(rec *Record) bool {
 	if f.filters == nil {
 		return true
 	}
 	for e := f.filters.Front(); e != nil; e = e.Next() {
 		filter := e.Value.(Filter)
-		if !filter.DoFilter(rec) {
+		if !filter.Filter(rec) {
 			return false
 		}
 	}
 	return true
+}
+
+func (f *GroupFilter) LoadConfig(config []byte) {
+}
+
+func (f *GroupFilter) LoadConfigFromMap(config map[string]interface{}) {
+
+}
+
+func (f *GroupFilter) LoadConfigFromFile(fileName string) {
+
 }

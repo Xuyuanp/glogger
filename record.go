@@ -21,6 +21,7 @@ import (
 	"time"
 )
 
+// Record is a struct contains all the logging information
 type Record struct {
 	Name    string
 	Level   LogLevel
@@ -34,6 +35,7 @@ type Record struct {
 
 var pathReg = regexp.MustCompile("/.*/")
 
+// NewRecord return a new Record
 func NewRecord(name string, t time.Time, level LogLevel, file string, funcname string, line int, msg string) *Record {
 	rec := &Record{
 		Name:    name,

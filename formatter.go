@@ -16,112 +16,43 @@
 
 package glogger
 
-import (
-	"fmt"
-	"regexp"
-	"strings"
-)
+import "sync"
 
-var LevelMap = map[LogLevel]string{
-	DebugLevel:    "DBUG",
-	InfoLevel:     "INFO",
-	WarnLevel:     "WARN",
-	ErrorLevel:    "ERRO",
-	CriticalLevel: "CRIT",
+func init() {
+	onceFormatterManager.Do(initFormatterManager)
 }
 
 type Formatter interface {
+	ConfigLoader
 	Format(rec *Record) string
 }
 
-type DefaultFormatter struct {
-	TimeFmt string
-	Fmt     string
+type formatterManager struct {
+	mapper map[string]Formatter
+	mu     sync.RWMutex
 }
 
-var defaultFormat = "[${time} ${levelname} ${sfile}:${line} ${func}] ${msg}"
-var defaultTimeFormat = "2006-01-02 15:04:05"
+var fmtManager *formatterManager
+var onceFormatterManager sync.Once
 
-func NewDefaultFormatter() *DefaultFormatter {
-	df := &DefaultFormatter{
-		TimeFmt: defaultTimeFormat,
-		Fmt:     defaultFormat,
+func initFormatterManager() {
+	fmtManager = &formatterManager{
+		mapper: map[string]Formatter{},
 	}
-	return df
 }
 
-var fieldHolderRegexp = regexp.MustCompile("\\$\\{\\w+\\}")
-
-func (df *DefaultFormatter) Format(rec *Record) string {
-	args := []interface{}{}
-	newFmt := df.Fmt
-	fieldMap := map[string]interface{}{
-		"name":      rec.Name,
-		"time":      rec.Time.Format(df.TimeFmt),
-		"levelno":   rec.Level,
-		"levelname": LevelMap[rec.Level],
-		"lfile":     rec.LFile,
-		"sfile":     rec.SFile,
-		"func":      rec.Func,
-		"line":      rec.Line,
-		"msg":       rec.Message,
+func RegisterFormatter(name string, formatter Formatter) {
+	fmtManager.mu.Lock()
+	defer fmtManager.mu.Unlock()
+	_, dup := fmtManager.mapper[name]
+	if dup {
+		panic("Formatter named " + name + " twice")
 	}
-	newFmt = strings.Replace(newFmt, "%", "%%", -1)
-	newFmt = fieldHolderRegexp.ReplaceAllStringFunc(newFmt, func(match string) string {
-		fieldName := match[2 : len(match)-1]
-		field, ok := fieldMap[fieldName]
-		if ok {
-			args = append(args, field)
-			return "%v"
-		}
-		return match
-	})
-
-	return fmt.Sprintf(newFmt, args...)
+	fmtManager.mapper[name] = formatter
 }
 
-var defaultLevelColors = map[LogLevel]string{
-	DebugLevel:    "bold_cyan",
-	InfoLevel:     "bold_green",
-	WarnLevel:     "bold_yellow",
-	ErrorLevel:    "bold_red",
-	CriticalLevel: "bg_bold_red",
-}
-
-var defaultRainbowFormat = "[${time} ${log_color}${levelname}${reset} ${dim}${green}${sfile}${reset}:${line} ${dim_cyan}${func}${reset}] ${msg}"
-
-type RainbowFormatter struct {
-	*DefaultFormatter
-	LevelColors map[LogLevel]string
-}
-
-func NewRainbowFormatter() *RainbowFormatter {
-	rf := &RainbowFormatter{
-		DefaultFormatter: &DefaultFormatter{
-			Fmt:     defaultRainbowFormat,
-			TimeFmt: defaultTimeFormat,
-		},
-		LevelColors: defaultLevelColors,
-	}
-	return rf
-}
-
-func (rf *RainbowFormatter) Format(rec *Record) string {
-	newFmt := rf.DefaultFormatter.Format(rec)
-
-	newFmt = fieldHolderRegexp.ReplaceAllStringFunc(newFmt, func(match string) string {
-		m := match[2 : len(match)-1]
-		if m == "log_color" {
-			m, _ = rf.LevelColors[rec.Level]
-		}
-		code, ok := EscapeCodes[m]
-		if ok {
-			return code
-		}
-		return match
-	})
-
-	newFmt += EscapeCodes["reset"]
-
-	return newFmt
+func GetFormatter(name string) Formatter {
+	fmtManager.mu.RLock()
+	defer fmtManager.mu.RUnlock()
+	return fmtManager.mapper[name]
 }
