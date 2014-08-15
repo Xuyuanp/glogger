@@ -26,6 +26,7 @@ func init() {
 	onceHandlerManager.Do(initHandlermanager)
 }
 
+// Handler determines where the log message to output
 type Handler interface {
 	Namer
 	Leveler
@@ -49,6 +50,9 @@ func initHandlermanager() {
 	}
 }
 
+// RegisterHandler register a Handler to global manager with specific name.
+// The Handler registered can be accessed by GetHandler method anywhere with this name.
+// It will panic if this name has been registered twice.
 func RegisterHandler(name string, handler Handler) {
 	hdlManager.mu.Lock()
 	defer hdlManager.mu.Unlock()
@@ -59,6 +63,8 @@ func RegisterHandler(name string, handler Handler) {
 	hdlManager.mapper[name] = handler
 }
 
+// GetHandler return the Handler registered with this name.
+// nil will by returned if no Handler registered with this name.
 func GetHandler(name string) Handler {
 	hdlManager.mu.RLock()
 	defer hdlManager.mu.RUnlock()
@@ -81,7 +87,7 @@ func (hg *handlerGroup) Handle(rec *Record) {
 		return
 	}
 	for e := hg.handlers.Front(); e != nil; e = e.Next() {
-		var h Handler = e.Value.(Handler)
+		var h = e.Value.(Handler)
 		func() {
 			if rec.Level < h.Level() || !h.Filter(rec) {
 				return

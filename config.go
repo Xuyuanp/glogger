@@ -23,8 +23,10 @@ import (
 	"sync"
 )
 
+// ConfigLoaderBuilder is a function which return a ConfigLoader.
 type ConfigLoaderBuilder func() ConfigLoader
 
+// ConfigLoader provide method to load config from bytes, string or a file.
 type ConfigLoader interface {
 	LoadConfig(config []byte)
 	LoadConfigFromMap(m map[string]interface{})
@@ -40,7 +42,7 @@ func init() {
 
 func initManager() {
 	manager = &configLoaderBuilderManager{
-		mapper: map[string]ConfigLoaderBuilder{},
+		mapper: make(map[string]ConfigLoaderBuilder),
 	}
 }
 
@@ -65,14 +67,17 @@ func (manager *configLoaderBuilderManager) getConfigLoaderBuilder(name string) C
 	return manager.mapper[name]
 }
 
+// RegisterConfigLoaderBuilder register the builder whith name.
 func RegisterConfigLoaderBuilder(name string, configLoader ConfigLoaderBuilder) {
 	manager.registerConfigLoaderBuilder(name, configLoader)
 }
 
+// GetConfigLoaderBuilder return a ConfigLoaderBuilder registered with this name
 func GetConfigLoaderBuilder(name string) ConfigLoaderBuilder {
 	return manager.getConfigLoaderBuilder(name)
 }
 
+// LoadConfig parse the json format configuration.
 func LoadConfig(config []byte) {
 	var configMap map[string]map[string]map[string]interface{}
 	err := json.Unmarshal(config, &configMap)
@@ -81,12 +86,12 @@ func LoadConfig(config []byte) {
 	}
 
 	process := func(name string, conf map[string]interface{}, callback func(loader ConfigLoader)) {
-		builderName_, yes := conf["builder"]
+		bn, yes := conf["builder"]
 		var builderName string
 		if !yes {
 			panic("'build' field is required for section " + name)
 		}
-		builderName = builderName_.(string)
+		builderName = bn.(string)
 		builder := GetConfigLoaderBuilder(builderName)
 		if builder == nil {
 			panic("Builder named " + builderName + " doesn't exist")
@@ -134,6 +139,7 @@ func LoadConfig(config []byte) {
 	}
 }
 
+// LoadConfigFromFile read file's content and call the LoadConfig method.
 func LoadConfigFromFile(fileName string) {
 	file, err := os.Open(fileName)
 	if err != nil {

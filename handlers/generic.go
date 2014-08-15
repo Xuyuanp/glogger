@@ -68,11 +68,11 @@ func (gh *GenericHandler) Mutex() *sync.Mutex {
 
 func (gh *GenericHandler) LoadConfig(config []byte) {
 	var m map[string]interface{}
-	err := json.Unmarshal(config, &m)
-	if err != nil {
+	if err := json.Unmarshal(config, &m); err == nil {
+		rf.LoadConfigFromMap(m)
+	} else {
 		panic(err)
 	}
-	gh.LoadConfigFromMap(m)
 }
 
 func (gh *GenericHandler) LoadConfigFromMap(config map[string]interface{}) {

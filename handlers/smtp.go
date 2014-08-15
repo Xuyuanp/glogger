@@ -82,11 +82,11 @@ func (sh *SmtpHandler) Emit(text string) {
 
 func (sh *SmtpHandler) LoadConfig(config []byte) {
 	var m map[string]interface{}
-	err := json.Unmarshal(config, &m)
-	if err != nil {
+	if err := json.Unmarshal(config, &m); err == nil {
+		rf.LoadConfigFromMap(m)
+	} else {
 		panic(err)
 	}
-	sh.LoadConfigFromMap(m)
 }
 
 func (sh *SmtpHandler) LoadConfigFromMap(config map[string]interface{}) {

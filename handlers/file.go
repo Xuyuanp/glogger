@@ -57,11 +57,11 @@ func (fh *FileHandler) Emit(text string) {
 
 func (fh *FileHandler) LoadConfig(config []byte) {
 	var m map[string]interface{}
-	err := json.Unmarshal(config, &m)
-	if err != nil {
+	if err := json.Unmarshal(config, &m); err == nil {
+		rf.LoadConfigFromMap(m)
+	} else {
 		panic(err)
 	}
-	fh.LoadConfigFromMap(m)
 }
 
 func (fh *FileHandler) LoadConfigFromMap(config map[string]interface{}) {

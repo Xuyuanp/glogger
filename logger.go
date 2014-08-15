@@ -46,22 +46,27 @@ func New(name string, level LogLevel) Logger {
 	return l
 }
 
+// Debug see details in Logger interface
 func (l *gLogger) Debug(f string, v ...interface{}) {
 	l.log(DebugLevel, fmt.Sprintf(f, v...))
 }
 
+// Info see details in Logger interface
 func (l *gLogger) Info(f string, v ...interface{}) {
 	l.log(InfoLevel, fmt.Sprintf(f, v...))
 }
 
+// Warning see details in Logger interface
 func (l *gLogger) Warning(f string, v ...interface{}) {
 	l.log(WarnLevel, fmt.Sprintf(f, v...))
 }
 
+// Error see details in Logger interface
 func (l *gLogger) Error(f string, v ...interface{}) {
 	l.log(ErrorLevel, fmt.Sprintf(f, v...))
 }
 
+// Critical see details in Logger interface
 func (l *gLogger) Critical(f string, v ...interface{}) {
 	l.log(CriticalLevel, fmt.Sprintf(f, v...))
 }

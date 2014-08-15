@@ -54,11 +54,11 @@ var writerMap = map[string]io.Writer{
 
 func (sh *StreamHandler) LoadConfig(config []byte) {
 	var m map[string]interface{}
-	err := json.Unmarshal(config, &m)
-	if err != nil {
+	if err := json.Unmarshal(config, &m); err == nil {
+		rf.LoadConfigFromMap(m)
+	} else {
 		panic(err)
 	}
-	sh.LoadConfigFromMap(m)
 }
 
 func (sh *StreamHandler) LoadConfigFromMap(config map[string]interface{}) {
