@@ -83,44 +83,44 @@ type Logger interface {
 	AddHandler(h Handler)
 }
 
-type loggerMapper struct {
+type loggerManager struct {
 	mapper map[string]Logger
 	mu     sync.RWMutex
 }
 
-var lm *loggerMapper
+var lm *loggerManager
 var once sync.Once
 
 func init() {
-	// make sure loggerMapper init only once
+	// make sure loggerManager init only once
 	once.Do(setup)
 }
 
 func setup() {
-	lm = &loggerMapper{
-		mapper: map[string]Logger{},
+	lm = &loggerManager{
+		mapper: make(map[string]Logger),
 	}
 }
 
-func (lm *loggerMapper) getLogger(name string) Logger {
+func (lm *loggerManager) getLogger(name string) Logger {
 	lm.mu.RLock()
 	defer lm.mu.RUnlock()
 	return lm.mapper[name]
 }
 
-func (lm *loggerMapper) unRegisterLogger(l Logger) {
+func (lm *loggerManager) unRegisterLogger(l Logger) {
 	lm.mu.Lock()
 	defer lm.mu.Unlock()
 	delete(lm.mapper, l.Name())
 }
 
-func (lm *loggerMapper) unRegisterLoggerByName(name string) {
+func (lm *loggerManager) unRegisterLoggerByName(name string) {
 	lm.mu.Lock()
 	defer lm.mu.Unlock()
 	delete(lm.mapper, name)
 }
 
-func (lm *loggerMapper) registerLogger(l Logger) {
+func (lm *loggerManager) registerLogger(l Logger) {
 	lm.mu.Lock()
 	defer lm.mu.Unlock()
 	_, ok := lm.mapper[l.Name()]
