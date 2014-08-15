@@ -1,7 +1,10 @@
 glogger
 =======
 
-[![GoDoc](https://godoc.org/github.com/Xuyuanp/glogger?status.svg)](https://godoc.org/github.com/Xuyuanp/glogger)
+[![GoDoc](https://godoc.org/github.com/Xuyuanp/glogger?status.svg)](https://godoc.org/github.com/Xuyuanp/glogger)    
+[![](https://travis-ci.org/Xuyuanp/glogger.svg?branch=master)](https://travis-ci.org/Xuyuanp/glogger)
+
+
 
 A python-like logging library for go
 
