@@ -83,7 +83,7 @@ func (sh *SmtpHandler) Emit(text string) {
 func (sh *SmtpHandler) LoadConfig(config []byte) {
 	var m map[string]interface{}
 	if err := json.Unmarshal(config, &m); err == nil {
-		rf.LoadConfigFromMap(m)
+		sh.LoadConfigFromMap(m)
 	} else {
 		panic(err)
 	}
@@ -121,12 +121,11 @@ func (sh *SmtpHandler) LoadConfigFromMap(config map[string]interface{}) {
 func (sh *SmtpHandler) LoadConfigFromFile(fileName string) {
 	if file, err := os.Open(fileName); err == nil {
 		defer file.Close()
-	} else {
-		panic(err)
-	}
-
-	if code, err := ioutil.ReadAll(file); err == nil {
-		l.LoadConfig(code)
+		if code, err := ioutil.ReadAll(file); err == nil {
+			sh.LoadConfig(code)
+		} else {
+			panic(err)
+		}
 	} else {
 		panic(err)
 	}

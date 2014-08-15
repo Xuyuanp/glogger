@@ -87,9 +87,8 @@ func (df *DefaultFormatter) LoadConfig(config []byte) {
 }
 
 func (df *DefaultFormatter) LoadConfigFromMap(config map[string]interface{}) {
-	var m map[string]interface{}
-	if err := json.Unmarshal(config, &m); err == nil {
-		rf.LoadConfigFromMap(m)
+	if code, err := json.Marshal(config); err == nil {
+		df.LoadConfig(code)
 	} else {
 		panic(err)
 	}
@@ -98,12 +97,11 @@ func (df *DefaultFormatter) LoadConfigFromMap(config map[string]interface{}) {
 func (df *DefaultFormatter) LoadConfigFromFile(fileName string) {
 	if file, err := os.Open(fileName); err == nil {
 		defer file.Close()
-	} else {
-		panic(err)
-	}
-
-	if code, err := ioutil.ReadAll(file); err == nil {
-		l.LoadConfig(code)
+		if code, err := ioutil.ReadAll(file); err == nil {
+			df.LoadConfig(code)
+		} else {
+			panic(err)
+		}
 	} else {
 		panic(err)
 	}

@@ -55,7 +55,7 @@ var writerMap = map[string]io.Writer{
 func (sh *StreamHandler) LoadConfig(config []byte) {
 	var m map[string]interface{}
 	if err := json.Unmarshal(config, &m); err == nil {
-		rf.LoadConfigFromMap(m)
+		sh.LoadConfigFromMap(m)
 	} else {
 		panic(err)
 	}
@@ -77,13 +77,13 @@ func (sh *StreamHandler) LoadConfigFromMap(config map[string]interface{}) {
 func (sh *StreamHandler) LoadConfigFromFile(fileName string) {
 	if file, err := os.Open(fileName); err == nil {
 		defer file.Close()
+		if code, err := ioutil.ReadAll(file); err == nil {
+			sh.LoadConfig(code)
+		} else {
+			panic(err)
+		}
 	} else {
 		panic(err)
 	}
 
-	if code, err := ioutil.ReadAll(file); err == nil {
-		l.LoadConfig(code)
-	} else {
-		panic(err)
-	}
 }

@@ -135,6 +135,7 @@ func LoadConfig(config []byte) {
 			logger := new(gLogger)
 			logger.LoadConfigFromMap(conf)
 			logger.SetName(name)
+			RegisterLogger(logger)
 		}
 	}
 }

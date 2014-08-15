@@ -69,7 +69,7 @@ func (gh *GenericHandler) Mutex() *sync.Mutex {
 func (gh *GenericHandler) LoadConfig(config []byte) {
 	var m map[string]interface{}
 	if err := json.Unmarshal(config, &m); err == nil {
-		rf.LoadConfigFromMap(m)
+		gh.LoadConfigFromMap(m)
 	} else {
 		panic(err)
 	}
@@ -102,12 +102,11 @@ func (gh *GenericHandler) LoadConfigFromMap(config map[string]interface{}) {
 func (gh *GenericHandler) LoadConfigFromFile(fileName string) {
 	if file, err := os.Open(fileName); err == nil {
 		defer file.Close()
-	} else {
-		panic(err)
-	}
-
-	if code, err := ioutil.ReadAll(file); err == nil {
-		l.LoadConfig(code)
+		if code, err := ioutil.ReadAll(file); err == nil {
+			gh.LoadConfig(code)
+		} else {
+			panic(err)
+		}
 	} else {
 		panic(err)
 	}

@@ -148,12 +148,11 @@ func (l *gLogger) LoadConfigFromMap(config map[string]interface{}) {
 func (l *gLogger) LoadConfigFromFile(fileName string) {
 	if file, err := os.Open(fileName); err == nil {
 		defer file.Close()
-	} else {
-		panic(err)
-	}
-
-	if code, err := ioutil.ReadAll(file); err == nil {
-		l.LoadConfig(code)
+		if code, err := ioutil.ReadAll(file); err == nil {
+			l.LoadConfig(code)
+		} else {
+			panic(err)
+		}
 	} else {
 		panic(err)
 	}

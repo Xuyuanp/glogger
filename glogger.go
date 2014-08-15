@@ -142,13 +142,13 @@ func GetLogger(name string) Logger {
 // UnregisterLogger unregister the logger from global manager, this will make the logger
 // unreachable for others. If this Logger hasn't been registered, nothing will happen.
 func UnregisterLogger(l Logger) {
-	lm.unRegisterLogger(l)
+	lm.unregisterLogger(l)
 }
 
 // UnregisterLoggerByName is like UnregisterLogger, but unregister the Logger by name.
 // If there is no Logger with this name registered before, nothing will happen.
 func UnregisterLoggerByName(name string) {
-	lm.unRegisterLoggerByName(name)
+	lm.unregisterLoggerByName(name)
 }
 
 // RegisterLogger will register the logger to global manager. The logger registered can be

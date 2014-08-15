@@ -107,12 +107,11 @@ func (rf *RainbowFormatter) LoadConfigFromMap(config map[string]interface{}) {
 func (rf *RainbowFormatter) LoadConfigFromFile(fileName string) {
 	if file, err := os.Open(fileName); err == nil {
 		defer file.Close()
-	} else {
-		panic(err)
-	}
-
-	if code, err := ioutil.ReadAll(file); err == nil {
-		l.LoadConfig(code)
+		if code, err := ioutil.ReadAll(file); err == nil {
+			rf.LoadConfig(code)
+		} else {
+			panic(err)
+		}
 	} else {
 		panic(err)
 	}

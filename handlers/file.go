@@ -58,7 +58,7 @@ func (fh *FileHandler) Emit(text string) {
 func (fh *FileHandler) LoadConfig(config []byte) {
 	var m map[string]interface{}
 	if err := json.Unmarshal(config, &m); err == nil {
-		rf.LoadConfigFromMap(m)
+		fh.LoadConfigFromMap(m)
 	} else {
 		panic(err)
 	}
@@ -76,12 +76,11 @@ func (fh *FileHandler) LoadConfigFromMap(config map[string]interface{}) {
 func (fh *FileHandler) LoadConfigFromFile(fileName string) {
 	if file, err := os.Open(fileName); err == nil {
 		defer file.Close()
-	} else {
-		panic(err)
-	}
-
-	if code, err := ioutil.ReadAll(file); err == nil {
-		l.LoadConfig(code)
+		if code, err := ioutil.ReadAll(file); err == nil {
+			fh.LoadConfig(code)
+		} else {
+			panic(err)
+		}
 	} else {
 		panic(err)
 	}
