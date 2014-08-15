@@ -33,7 +33,7 @@ const (
 	CriticalLevel
 )
 
-// LevelToString is a map to translat LogLevel to a level name string
+// LevelToString is a map to translate LogLevel to a level name string
 var LevelToString = map[LogLevel]string{
 	DebugLevel:    "DBUG",
 	InfoLevel:     "INFO",
@@ -42,7 +42,7 @@ var LevelToString = map[LogLevel]string{
 	CriticalLevel: "CRIT",
 }
 
-// StringToLevel is a map to translat level name to LogLevel type
+// StringToLevel is a map to translate level name to LogLevel type
 var StringToLevel = map[string]LogLevel{
 	"DEBUG":    DebugLevel,
 	"INFO":     InfoLevel,
