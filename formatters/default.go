@@ -87,23 +87,24 @@ func (df *DefaultFormatter) LoadConfig(config []byte) {
 }
 
 func (df *DefaultFormatter) LoadConfigFromMap(config map[string]interface{}) {
-	code, err := json.Marshal(config)
-	if err != nil {
+	var m map[string]interface{}
+	if err := json.Unmarshal(config, &m); err == nil {
+		rf.LoadConfigFromMap(m)
+	} else {
 		panic(err)
 	}
-	df.LoadConfig(code)
 }
 
 func (df *DefaultFormatter) LoadConfigFromFile(fileName string) {
-	file, err := os.Open(fileName)
-	if err != nil {
+	if file, err := os.Open(fileName); err == nil {
+		defer file.Close()
+	} else {
 		panic(err)
 	}
-	defer file.Close()
 
-	code, err := ioutil.ReadAll(file)
-	if err != nil {
+	if code, err := ioutil.ReadAll(file); err == nil {
+		l.LoadConfig(code)
+	} else {
 		panic(err)
 	}
-	df.LoadConfig(code)
 }

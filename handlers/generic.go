@@ -100,15 +100,15 @@ func (gh *GenericHandler) LoadConfigFromMap(config map[string]interface{}) {
 }
 
 func (gh *GenericHandler) LoadConfigFromFile(fileName string) {
-	file, err := os.Open(fileName)
-	if err != nil {
+	if file, err := os.Open(fileName); err == nil {
+		defer file.Close()
+	} else {
 		panic(err)
 	}
-	defer file.Close()
 
-	code, err := ioutil.ReadAll(file)
-	if err != nil {
+	if code, err := ioutil.ReadAll(file); err == nil {
+		l.LoadConfig(code)
+	} else {
 		panic(err)
 	}
-	gh.LoadConfig(code)
 }

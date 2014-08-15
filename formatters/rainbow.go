@@ -78,11 +78,11 @@ func (rf *RainbowFormatter) Format(rec *glogger.Record) string {
 
 func (rf *RainbowFormatter) LoadConfig(config []byte) {
 	var m map[string]interface{}
-	err := json.Unmarshal(config, &m)
-	if err != nil {
+	if err := json.Unmarshal(config, &m); err == nil {
+		rf.LoadConfigFromMap(m)
+	} else {
 		panic(err)
 	}
-	rf.LoadConfigFromMap(m)
 }
 
 func (rf *RainbowFormatter) LoadConfigFromMap(config map[string]interface{}) {
@@ -105,15 +105,15 @@ func (rf *RainbowFormatter) LoadConfigFromMap(config map[string]interface{}) {
 }
 
 func (rf *RainbowFormatter) LoadConfigFromFile(fileName string) {
-	file, err := os.Open(fileName)
-	if err != nil {
+	if file, err := os.Open(fileName); err == nil {
+		defer file.Close()
+	} else {
 		panic(err)
 	}
-	defer file.Close()
 
-	code, err := ioutil.ReadAll(file)
-	if err != nil {
+	if code, err := ioutil.ReadAll(file); err == nil {
+		l.LoadConfig(code)
+	} else {
 		panic(err)
 	}
-	rf.LoadConfig(code)
 }

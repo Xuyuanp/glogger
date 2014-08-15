@@ -34,9 +34,9 @@ type gLogger struct {
 }
 
 // New return a new Logger.
-// name means the logger's name, it should be unique.
-// level means the logger's level, all the logs who's level lower than this will be ignore
-// It will panic if this name has been registered.
+// name is the logger's name, it should be unique.
+// level is the logger's level, all the logs with level lower than this will be ignore
+// New will panic if this name has been registered.
 func New(name string, level LogLevel) Logger {
 	l := &gLogger{
 		name:  name,
@@ -95,10 +95,11 @@ func (l *gLogger) Level() LogLevel {
 	return l.level
 }
 
+// SetName rename logger'name
+// Remember unregister this logger before,
+// and register loger after SetName
 func (l *gLogger) SetName(name string) {
-	UnRegisterLogger(l)
 	l.name = name
-	RegisterLogger(l)
 }
 
 func (l *gLogger) SetLevel(level LogLevel) {
@@ -107,11 +108,11 @@ func (l *gLogger) SetLevel(level LogLevel) {
 
 func (l *gLogger) LoadConfig(config []byte) {
 	var m map[string]interface{}
-	err := json.Unmarshal(config, &m)
-	if err != nil {
+	if err := json.Unmarshal(config, &m); err == nil {
+		l.LoadConfigFromMap(m)
+	} else {
 		panic(err)
 	}
-	l.LoadConfigFromMap(m)
 }
 
 func (l *gLogger) LoadConfigFromMap(config map[string]interface{}) {
@@ -140,15 +141,15 @@ func (l *gLogger) LoadConfigFromMap(config map[string]interface{}) {
 }
 
 func (l *gLogger) LoadConfigFromFile(fileName string) {
-	file, err := os.Open(fileName)
-	if err != nil {
+	if file, err := os.Open(fileName); err == nil {
+		defer file.Close()
+	} else {
 		panic(err)
 	}
-	defer file.Close()
 
-	code, err := ioutil.ReadAll(file)
-	if err != nil {
+	if code, err := ioutil.ReadAll(file); err == nil {
+		l.LoadConfig(code)
+	} else {
 		panic(err)
 	}
-	l.LoadConfig(code)
 }
