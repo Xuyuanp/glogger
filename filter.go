@@ -16,48 +16,24 @@
 
 package glogger
 
-import (
-	"container/list"
-	"sync"
-)
-
-func init() {
-	onceFilterManager.Do(initFilterManager)
-}
+import "container/list"
 
 type Filter interface {
 	ConfigLoader
 	Filter(rec *Record) bool
 }
 
-type filterManager struct {
-	mapper map[string]Filter
-	mu     sync.RWMutex
-}
-
-var fltManager *filterManager
-var onceFilterManager sync.Once
-
-func initFilterManager() {
-	fltManager = &filterManager{
-		mapper: map[string]Filter{},
-	}
-}
+var filterRegister = NewRegister()
 
 func RegisterFilter(name string, filter Filter) {
-	fltManager.mu.Lock()
-	defer fltManager.mu.Unlock()
-	_, dup := fltManager.mapper[name]
-	if dup {
-		panic("Filter named " + name + " register twice")
-	}
-	fltManager.mapper[name] = filter
+	filterRegister.Register(name, filter)
 }
 
 func GetFilter(name string) Filter {
-	fltManager.mu.RLock()
-	defer fltManager.mu.RUnlock()
-	return fltManager.mapper[name]
+	if v := filterRegister.Get(name); v != nil {
+		return v.(Filter)
+	}
+	return nil
 }
 
 type GroupFilter struct {

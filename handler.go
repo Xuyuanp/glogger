@@ -22,10 +22,6 @@ import (
 	"sync"
 )
 
-func init() {
-	onceHandlerManager.Do(initHandlermanager)
-}
-
 // Handler determines where the log message to output
 type Handler interface {
 	Namer
@@ -36,39 +32,23 @@ type Handler interface {
 	Mutex() *sync.Mutex
 }
 
-type handlerManager struct {
-	mapper map[string]Handler
-	mu     sync.RWMutex
-}
-
-var hdlManager *handlerManager
-var onceHandlerManager sync.Once
-
-func initHandlermanager() {
-	hdlManager = &handlerManager{
-		mapper: map[string]Handler{},
-	}
-}
+var handlerRegister = NewRegister()
 
 // RegisterHandler register a Handler to global manager with specific name.
 // The Handler registered can be accessed by GetHandler method anywhere with this name.
 // It will panic if this name has been registered twice.
 func RegisterHandler(name string, handler Handler) {
-	hdlManager.mu.Lock()
-	defer hdlManager.mu.Unlock()
-	_, dup := hdlManager.mapper[name]
-	if dup {
-		panic("Register Handler named " + name + " twice")
-	}
-	hdlManager.mapper[name] = handler
+	handlerRegister.Register(name, handler)
 }
 
 // GetHandler return the Handler registered with this name.
 // nil will by returned if no Handler registered with this name.
 func GetHandler(name string) Handler {
-	hdlManager.mu.RLock()
-	defer hdlManager.mu.RUnlock()
-	return hdlManager.mapper[name]
+	return handlerRegister.Get(name).(Handler)
+	if v := handlerRegister.Get(name); v != nil {
+		return v.(Handler)
+	}
+	return nil
 }
 
 type handlerGroup struct {

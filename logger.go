@@ -42,7 +42,7 @@ func New(name string, level LogLevel) Logger {
 		name:  name,
 		level: level,
 	}
-	RegisterLogger(l)
+	RegisterLogger(name, l)
 	return l
 }
 
