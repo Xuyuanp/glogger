@@ -33,9 +33,7 @@ type gLogger struct {
 	level LogLevel
 }
 
-// New return a new Logger.
-// level is the logger's level, all the logs with level lower than this will be ignore
-// New will panic if this name has been registered.
+// NewLogger return a new Logger with debug level as default.
 func NewLogger() Logger {
 	l := &gLogger{
 		level: DebugLevel,
