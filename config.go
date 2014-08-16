@@ -94,7 +94,6 @@ func LoadConfig(config []byte) {
 		for name, conf := range handlers {
 			process(name, conf, func(loader ConfigLoader) {
 				handler := loader.(Handler)
-				handler.SetName(name)
 				RegisterHandler(name, handler)
 			})
 		}
@@ -102,9 +101,8 @@ func LoadConfig(config []byte) {
 	loggers, ok := configMap["loggers"]
 	if ok {
 		for name, conf := range loggers {
-			logger := new(gLogger)
+			logger := NewLogger()
 			logger.LoadConfigFromMap(conf)
-			logger.SetName(name)
 			RegisterLogger(name, logger)
 		}
 	}

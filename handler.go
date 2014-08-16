@@ -24,7 +24,6 @@ import (
 
 // Handler determines where the log message to output
 type Handler interface {
-	Namer
 	Leveler
 	Filter
 	Emit(log string)

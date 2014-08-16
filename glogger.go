@@ -46,12 +46,6 @@ var StringToLevel = map[string]LogLevel{
 	"CRITICAL": CriticalLevel,
 }
 
-// Namer is an interface provided set/get name method
-type Namer interface {
-	Name() string
-	SetName(name string)
-}
-
 // Leveler is an interface provided set/get LogLevel method
 type Leveler interface {
 	Level() LogLevel
@@ -61,7 +55,6 @@ type Leveler interface {
 // Logger is an interface supported method like Debug, Info and so on
 type Logger interface {
 	Leveler
-	Namer
 	Filter
 
 	// log DebugLevel message
