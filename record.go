@@ -23,14 +23,14 @@ import (
 
 // Record is a struct contains all the logging information
 type Record struct {
-	Name    string
-	Level   LogLevel
-	Time    time.Time
-	LFile   string
-	SFile   string
-	Line    int
-	Func    string
-	Message string
+	Name    string    // logger name
+	Level   LogLevel  // log level
+	Time    time.Time // log time
+	LFile   string    // full file name
+	SFile   string    // final file name
+	Line    int       // line number
+	Func    string    // function name
+	Message string    // log message
 }
 
 var pathReg = regexp.MustCompile("/.*/")
