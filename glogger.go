@@ -16,11 +16,6 @@
 
 package glogger
 
-import (
-	"fmt"
-	"sync"
-)
-
 // LogLevel type
 type LogLevel uint8
 
@@ -51,12 +46,6 @@ var StringToLevel = map[string]LogLevel{
 	"CRITICAL": CriticalLevel,
 }
 
-// Namer is an interface provided set/get name method
-type Namer interface {
-	Name() string
-	SetName(name string)
-}
-
 // Leveler is an interface provided set/get LogLevel method
 type Leveler interface {
 	Level() LogLevel
@@ -66,7 +55,6 @@ type Leveler interface {
 // Logger is an interface supported method like Debug, Info and so on
 type Logger interface {
 	Leveler
-	Namer
 	Filter
 
 	// log DebugLevel message
@@ -87,72 +75,25 @@ type Logger interface {
 	AddHandler(h Handler)
 }
 
-type loggerManager struct {
-	mapper map[string]Logger
-	mu     sync.RWMutex
-}
-
-var lm *loggerManager
-var once sync.Once
-
-func init() {
-	// make sure loggerManager init only once
-	once.Do(setup)
-}
-
-func setup() {
-	lm = &loggerManager{
-		mapper: make(map[string]Logger),
-	}
-}
-
-func (lm *loggerManager) getLogger(name string) Logger {
-	lm.mu.RLock()
-	defer lm.mu.RUnlock()
-	return lm.mapper[name]
-}
-
-func (lm *loggerManager) unregisterLogger(l Logger) {
-	lm.mu.Lock()
-	defer lm.mu.Unlock()
-	delete(lm.mapper, l.Name())
-}
-
-func (lm *loggerManager) unregisterLoggerByName(name string) {
-	lm.mu.Lock()
-	defer lm.mu.Unlock()
-	delete(lm.mapper, name)
-}
-
-func (lm *loggerManager) registerLogger(l Logger) {
-	lm.mu.Lock()
-	defer lm.mu.Unlock()
-	if _, ok := lm.mapper[l.Name()]; ok {
-		panic(fmt.Sprintf("Register logger with name:%s twice", l.Name()))
-	}
-	lm.mapper[l.Name()] = l
-}
+var loggerRegister = NewRegister()
 
 // GetLogger return a Logger with name.
 // GetLogger will return nil if there is no Logger with this name
 func GetLogger(name string) Logger {
-	return lm.getLogger(name)
+	if v := loggerRegister.Get(name); v != nil {
+		return v.(Logger)
+	}
+	return nil
 }
 
 // UnregisterLogger unregister the logger from global manager, this will make the logger
 // unreachable for others. If this Logger hasn't been registered, nothing will happen.
-func UnregisterLogger(l Logger) {
-	lm.unregisterLogger(l)
-}
-
-// UnregisterLoggerByName is like UnregisterLogger, but unregister the Logger by name.
-// If there is no Logger with this name registered before, nothing will happen.
-func UnregisterLoggerByName(name string) {
-	lm.unregisterLoggerByName(name)
+func UnregisterLogger(name string) {
+	loggerRegister.Unregister(name)
 }
 
 // RegisterLogger will register the logger to global manager. The logger registered can be
 // accessed by GetLogger() method with logger's name.
-func RegisterLogger(l Logger) {
-	lm.registerLogger(l)
+func RegisterLogger(name string, l Logger) {
+	loggerRegister.Register(name, l)
 }

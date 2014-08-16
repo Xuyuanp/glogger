@@ -30,7 +30,6 @@ import (
 type GenericHandler struct {
 	glogger.GroupFilter
 	level     glogger.LogLevel
-	name      string
 	formatter glogger.Formatter
 	mu        sync.Mutex
 }
@@ -46,16 +45,8 @@ func (gh *GenericHandler) Format(rec *glogger.Record) string {
 	return gh.formatter.Format(rec)
 }
 
-func (gh *GenericHandler) Name() string {
-	return gh.name
-}
-
 func (gh *GenericHandler) Level() glogger.LogLevel {
 	return gh.level
-}
-
-func (gh *GenericHandler) SetName(name string) {
-	gh.name = name
 }
 
 func (gh *GenericHandler) SetLevel(level glogger.LogLevel) {
@@ -76,9 +67,6 @@ func (gh *GenericHandler) LoadConfig(config []byte) {
 }
 
 func (gh *GenericHandler) LoadConfigFromMap(config map[string]interface{}) {
-	if name, ok := config["name"]; ok {
-		gh.name = name.(string)
-	}
 	if level, ok := config["level"]; ok {
 		if l, ok := glogger.StringToLevel[level.(string)]; ok {
 			gh.level = l

@@ -16,20 +16,36 @@
 
 package glogger
 
-type Formatter interface {
-	ConfigLoader
-	Format(rec *Record) string
+import "sync"
+
+type register struct {
+	mapper map[string]interface{}
+	mu     sync.RWMutex
 }
 
-var formatterRegister = NewRegister()
-
-func RegisterFormatter(name string, formatter Formatter) {
-	formatterRegister.Register(name, formatter)
-}
-
-func GetFormatter(name string) Formatter {
-	if v := formatterRegister.Get(name); v != nil {
-		return v.(Formatter)
+func NewRegister() *register {
+	return &register{
+		mapper: make(map[string]interface{}),
 	}
-	return nil
+}
+
+func (r *register) Register(name string, v interface{}) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if _, dup := r.mapper[name]; dup {
+		panic("register name: " + name + " twice")
+	}
+	r.mapper[name] = v
+}
+
+func (r *register) Unregister(name string) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	delete(r.mapper, name)
+}
+
+func (r *register) Get(name string) interface{} {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	return r.mapper[name]
 }
