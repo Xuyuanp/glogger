@@ -20,7 +20,6 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"os"
-	"sync"
 )
 
 // ConfigLoaderBuilder is a function which return a ConfigLoader.
@@ -33,48 +32,19 @@ type ConfigLoader interface {
 	LoadConfigFromFile(fileName string)
 }
 
-var manager *configLoaderBuilderManager
-var onceManager sync.Once
-
-func init() {
-	onceManager.Do(initManager)
-}
-
-func initManager() {
-	manager = &configLoaderBuilderManager{
-		mapper: make(map[string]ConfigLoaderBuilder),
-	}
-}
-
-type configLoaderBuilderManager struct {
-	mapper map[string]ConfigLoaderBuilder
-	mu     sync.RWMutex
-}
-
-func (manager *configLoaderBuilderManager) registerConfigLoaderBuilder(name string, configLoader ConfigLoaderBuilder) {
-	manager.mu.Lock()
-	defer manager.mu.Unlock()
-	_, dup := manager.mapper[name]
-	if dup {
-		panic("Duplicate ConfigLoader with name " + name)
-	}
-	manager.mapper[name] = configLoader
-}
-
-func (manager *configLoaderBuilderManager) getConfigLoaderBuilder(name string) ConfigLoaderBuilder {
-	manager.mu.RLock()
-	defer manager.mu.RUnlock()
-	return manager.mapper[name]
-}
+var configLoaderBuilderRegister = NewRegister()
 
 // RegisterConfigLoaderBuilder register the builder whith name.
-func RegisterConfigLoaderBuilder(name string, configLoader ConfigLoaderBuilder) {
-	manager.registerConfigLoaderBuilder(name, configLoader)
+func RegisterConfigLoaderBuilder(name string, builder ConfigLoaderBuilder) {
+	configLoaderBuilderRegister.Register(name, builder)
 }
 
 // GetConfigLoaderBuilder return a ConfigLoaderBuilder registered with this name
 func GetConfigLoaderBuilder(name string) ConfigLoaderBuilder {
-	return manager.getConfigLoaderBuilder(name)
+	if v := configLoaderBuilderRegister.Get(name); v != nil {
+		return v.(ConfigLoaderBuilder)
+	}
+	return nil
 }
 
 // LoadConfig parse the json format configuration.
@@ -124,7 +94,6 @@ func LoadConfig(config []byte) {
 		for name, conf := range handlers {
 			process(name, conf, func(loader ConfigLoader) {
 				handler := loader.(Handler)
-				handler.SetName(name)
 				RegisterHandler(name, handler)
 			})
 		}
@@ -132,10 +101,9 @@ func LoadConfig(config []byte) {
 	loggers, ok := configMap["loggers"]
 	if ok {
 		for name, conf := range loggers {
-			logger := new(gLogger)
+			logger := NewLogger()
 			logger.LoadConfigFromMap(conf)
-			logger.SetName(name)
-			RegisterLogger(logger)
+			RegisterLogger(name, logger)
 		}
 	}
 }
