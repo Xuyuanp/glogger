@@ -87,9 +87,13 @@ func GetLogger(name string) Logger {
 }
 
 // UnregisterLogger unregister the logger from global manager, this will make the logger
-// unreachable for others. If this Logger hasn't been registered, nothing will happen.
-func UnregisterLogger(name string) {
-	loggerRegister.Unregister(name)
+// unreachable for others and return the logger, this's the last chance getting it.
+// If this Logger hasn't been registered, nothing will happen and return nil
+func UnregisterLogger(name string) Logger {
+	if l := loggerRegister.Unregister(name); l != nil {
+		return l.(Logger)
+	}
+	return nil
 }
 
 // RegisterLogger will register the logger to global manager. The logger registered can be
