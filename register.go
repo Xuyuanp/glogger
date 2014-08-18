@@ -45,7 +45,7 @@ func (r *register) Register(name string, v interface{}) {
 func (r *register) Unregister(name string) interface{} {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	if v, ok := r.mapper[nam]; ok {
+	if v, ok := r.mapper[name]; ok {
 		delete(r.mapper, name)
 		return v
 	}
