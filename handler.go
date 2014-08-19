@@ -35,7 +35,7 @@ var handlerRegister = NewRegister()
 
 // RegisterHandler register a Handler to global manager with specific name.
 // The Handler registered can be accessed by GetHandler method anywhere with this name.
-// It will panic if this name has been registered twice.
+// It will panic if the provided name has been registered before.
 func RegisterHandler(name string, handler Handler) {
 	handlerRegister.Register(name, handler)
 }

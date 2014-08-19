@@ -35,7 +35,7 @@ type gLogger struct {
 }
 
 // NewLogger return a new Logger with debug level as default.
-func NewLogger() Logger {
+func NewLogger() *gLogger {
 	l := &gLogger{
 		level: DebugLevel,
 		ch:    make(chan *Record, 100000),

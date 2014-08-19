@@ -45,6 +45,10 @@ func (gh *GenericHandler) Format(rec *glogger.Record) string {
 	return gh.formatter.Format(rec)
 }
 
+func (gh *GenericHandler) SetFormatter(formatter glogger.Formatter) {
+	gh.formatter = formatter
+}
+
 func (gh *GenericHandler) Level() glogger.LogLevel {
 	return gh.level
 }

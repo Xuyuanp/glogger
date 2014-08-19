@@ -54,9 +54,6 @@ type Leveler interface {
 
 // Logger is an interface supported method like Debug, Info and so on
 type Logger interface {
-	Leveler
-	Filter
-
 	// log DebugLevel message
 	Debug(f string, v ...interface{})
 
@@ -71,8 +68,6 @@ type Logger interface {
 
 	// log CriticalLevel message
 	Critical(f string, v ...interface{})
-
-	AddHandler(h Handler)
 }
 
 var loggerRegister = NewRegister()
