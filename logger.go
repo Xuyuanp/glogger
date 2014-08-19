@@ -31,13 +31,16 @@ type gLogger struct {
 	handlerGroup
 	name  string
 	level LogLevel
+	ch    chan *Record
 }
 
 // NewLogger return a new Logger with debug level as default.
 func NewLogger() Logger {
 	l := &gLogger{
 		level: DebugLevel,
+		ch:    make(chan *Record, 100000),
 	}
+	go l.run()
 	return l
 }
 
@@ -84,7 +87,14 @@ func (l *gLogger) log(level LogLevel, msg string) {
 	if !l.Filter(rec) {
 		return
 	}
-	l.Handle(rec)
+	l.ch <- rec
+}
+
+func (l *gLogger) run() {
+	for {
+		rec := <-l.ch
+		l.Handle(rec)
+	}
 }
 
 func (l *gLogger) Level() LogLevel {
