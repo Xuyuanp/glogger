@@ -92,8 +92,10 @@ func (l *gLogger) log(level LogLevel, msg string) {
 
 func (l *gLogger) run() {
 	for {
-		rec := <-l.ch
-		l.Handle(rec)
+		select {
+		case rec := <-l.ch:
+			l.Handle(rec)
+		}
 	}
 }
 
