@@ -19,8 +19,6 @@ package formatters
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	"os"
 	"regexp"
 	"strings"
 
@@ -79,29 +77,16 @@ func (df *DefaultFormatter) Format(rec *glogger.Record) string {
 	return fmt.Sprintf(newFmt, args...)
 }
 
-func (df *DefaultFormatter) LoadConfig(config []byte) {
+func (df *DefaultFormatter) LoadConfigJson(config []byte) {
 	err := json.Unmarshal(config, df)
 	if err != nil {
 		panic(err)
 	}
 }
 
-func (df *DefaultFormatter) LoadConfigFromMap(config map[string]interface{}) {
+func (df *DefaultFormatter) LoadConfig(config map[string]interface{}) {
 	if code, err := json.Marshal(config); err == nil {
-		df.LoadConfig(code)
-	} else {
-		panic(err)
-	}
-}
-
-func (df *DefaultFormatter) LoadConfigFromFile(fileName string) {
-	if file, err := os.Open(fileName); err == nil {
-		defer file.Close()
-		if code, err := ioutil.ReadAll(file); err == nil {
-			df.LoadConfig(code)
-		} else {
-			panic(err)
-		}
+		df.LoadConfigJson(code)
 	} else {
 		panic(err)
 	}

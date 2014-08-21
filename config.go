@@ -27,9 +27,7 @@ type ConfigLoaderBuilder func() ConfigLoader
 
 // ConfigLoader provide method to load config from bytes, string or a file.
 type ConfigLoader interface {
-	LoadConfig(config []byte)
-	LoadConfigFromMap(m map[string]interface{})
-	LoadConfigFromFile(fileName string)
+	LoadConfig(m map[string]interface{})
 }
 
 var configLoaderBuilderRegister = NewRegister()
@@ -67,7 +65,7 @@ func LoadConfig(config []byte) {
 			panic("Builder named " + builderName + " doesn't exist")
 		}
 		loader := builder()
-		loader.LoadConfigFromMap(conf)
+		loader.LoadConfig(conf)
 		callback(loader)
 	}
 
@@ -102,7 +100,7 @@ func LoadConfig(config []byte) {
 	if ok {
 		for name, conf := range loggers {
 			logger := NewLogger()
-			logger.LoadConfigFromMap(conf)
+			logger.LoadConfig(conf)
 			RegisterLogger(name, logger)
 		}
 	}

@@ -17,10 +17,9 @@
 package handlers
 
 import (
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
+	"sync"
 
 	"github.com/Xuyuanp/glogger"
 )
@@ -34,6 +33,7 @@ func init() {
 type FileHandler struct {
 	*StreamHandler
 	FileName string
+	mu       sync.Mutex
 }
 
 func NewFileHandler() *FileHandler {
@@ -43,45 +43,23 @@ func NewFileHandler() *FileHandler {
 	return fh
 }
 
-func (fh *FileHandler) Emit(text string) {
-	if fh.Writer == nil {
-		file, err := os.OpenFile(fh.FileName, os.O_CREATE|os.O_APPEND|os.O_RDWR, 0640)
-		if err != nil {
-			fmt.Fprintln(os.Stderr, err)
-			return
-		}
-		fh.Writer = file
+func (fh *FileHandler) SetFileName(fileName string) {
+	fh.mu.Lock()
+	defer fh.mu.Unlock()
+	fh.FileName = fileName
+	file, err := os.OpenFile(fh.FileName, os.O_CREATE|os.O_APPEND|os.O_RDWR, 0640)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		return
 	}
-	fh.StreamHandler.Emit(text)
+	fh.SetWriter(file)
 }
 
-func (fh *FileHandler) LoadConfig(config []byte) {
-	var m map[string]interface{}
-	if err := json.Unmarshal(config, &m); err == nil {
-		fh.LoadConfigFromMap(m)
-	} else {
-		panic(err)
-	}
-}
-
-func (fh *FileHandler) LoadConfigFromMap(config map[string]interface{}) {
-	fh.GenericHandler.LoadConfigFromMap(config)
+func (fh *FileHandler) LoadConfig(config map[string]interface{}) {
+	fh.GenericHandler.LoadConfig(config)
 	if filename, ok := config["filename"]; ok {
-		fh.FileName = filename.(string)
+		fh.SetFileName(filename.(string))
 	} else {
 		panic("'filename' field is required")
-	}
-}
-
-func (fh *FileHandler) LoadConfigFromFile(fileName string) {
-	if file, err := os.Open(fileName); err == nil {
-		defer file.Close()
-		if code, err := ioutil.ReadAll(file); err == nil {
-			fh.LoadConfig(code)
-		} else {
-			panic(err)
-		}
-	} else {
-		panic(err)
 	}
 }

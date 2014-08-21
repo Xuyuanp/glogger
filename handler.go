@@ -16,26 +16,20 @@
 
 package glogger
 
-import (
-	"container/list"
-
-	"sync"
-)
+import "container/list"
 
 // Handler determines where the log message to output
 type Handler interface {
 	Leveler
 	Filter
-	Emit(log string)
-	Format(rec *Record) string
-	Mutex() *sync.Mutex
+	Handle(rec *Record)
 }
 
 var handlerRegister = NewRegister()
 
 // RegisterHandler register a Handler to global manager with specific name.
 // The Handler registered can be accessed by GetHandler method anywhere with this name.
-// It will panic if this name has been registered twice.
+// It will panic if the provided name has been registered before.
 func RegisterHandler(name string, handler Handler) {
 	handlerRegister.Register(name, handler)
 }
@@ -71,10 +65,7 @@ func (hg *handlerGroup) Handle(rec *Record) {
 			if rec.Level < h.Level() || !h.Filter(rec) {
 				return
 			}
-			h.Mutex().Lock()
-			defer h.Mutex().Unlock()
-			log := h.Format(rec)
-			h.Emit(log)
+			h.Handle(rec)
 		}()
 	}
 }

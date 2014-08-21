@@ -16,14 +16,7 @@
 
 package handlers
 
-import (
-	"encoding/json"
-	"io/ioutil"
-	"os"
-	"sync"
-
-	"github.com/Xuyuanp/glogger"
-)
+import "github.com/Xuyuanp/glogger"
 
 // GenericHandler is an abstract struct which fully implemented Handler interface
 // expected Emit method.
@@ -31,7 +24,6 @@ type GenericHandler struct {
 	glogger.GroupFilter
 	level     glogger.LogLevel
 	formatter glogger.Formatter
-	mu        sync.Mutex
 }
 
 func NewHandler() *GenericHandler {
@@ -45,6 +37,10 @@ func (gh *GenericHandler) Format(rec *glogger.Record) string {
 	return gh.formatter.Format(rec)
 }
 
+func (gh *GenericHandler) SetFormatter(formatter glogger.Formatter) {
+	gh.formatter = formatter
+}
+
 func (gh *GenericHandler) Level() glogger.LogLevel {
 	return gh.level
 }
@@ -53,20 +49,7 @@ func (gh *GenericHandler) SetLevel(level glogger.LogLevel) {
 	gh.level = level
 }
 
-func (gh *GenericHandler) Mutex() *sync.Mutex {
-	return &(gh.mu)
-}
-
-func (gh *GenericHandler) LoadConfig(config []byte) {
-	var m map[string]interface{}
-	if err := json.Unmarshal(config, &m); err == nil {
-		gh.LoadConfigFromMap(m)
-	} else {
-		panic(err)
-	}
-}
-
-func (gh *GenericHandler) LoadConfigFromMap(config map[string]interface{}) {
+func (gh *GenericHandler) LoadConfig(config map[string]interface{}) {
 	if level, ok := config["level"]; ok {
 		if l, ok := glogger.StringToLevel[level.(string)]; ok {
 			gh.level = l
@@ -84,18 +67,5 @@ func (gh *GenericHandler) LoadConfigFromMap(config map[string]interface{}) {
 		}
 	} else {
 		panic("'formater' field is required")
-	}
-}
-
-func (gh *GenericHandler) LoadConfigFromFile(fileName string) {
-	if file, err := os.Open(fileName); err == nil {
-		defer file.Close()
-		if code, err := ioutil.ReadAll(file); err == nil {
-			gh.LoadConfig(code)
-		} else {
-			panic(err)
-		}
-	} else {
-		panic(err)
 	}
 }

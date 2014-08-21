@@ -17,10 +17,10 @@
 package handlers
 
 import (
-	"encoding/json"
 	"io"
-	"io/ioutil"
+	"log"
 	"os"
+	"sync"
 
 	"github.com/Xuyuanp/glogger"
 )
@@ -33,18 +33,26 @@ func init() {
 
 type StreamHandler struct {
 	*GenericHandler
-	Writer io.Writer
+	nestedLogger *log.Logger
+	mu           sync.Mutex
 }
 
 func NewStreamHandler() *StreamHandler {
 	sh := &StreamHandler{
 		GenericHandler: NewHandler(),
+		nestedLogger:   log.New(os.Stdout, "", 0),
 	}
 	return sh
 }
 
-func (sh *StreamHandler) Emit(text string) {
-	sh.Writer.Write([]byte(text + "\n"))
+func (sh *StreamHandler) Handle(rec *glogger.Record) {
+	sh.nestedLogger.Println(sh.Format(rec))
+}
+
+func (sh *StreamHandler) SetWriter(writer io.Writer) {
+	sh.mu.Lock()
+	defer sh.mu.Unlock()
+	sh.nestedLogger = log.New(writer, "", 0)
 }
 
 var writerMap = map[string]io.Writer{
@@ -52,38 +60,15 @@ var writerMap = map[string]io.Writer{
 	"stderr": os.Stderr,
 }
 
-func (sh *StreamHandler) LoadConfig(config []byte) {
-	var m map[string]interface{}
-	if err := json.Unmarshal(config, &m); err == nil {
-		sh.LoadConfigFromMap(m)
-	} else {
-		panic(err)
-	}
-}
-
-func (sh *StreamHandler) LoadConfigFromMap(config map[string]interface{}) {
-	sh.GenericHandler.LoadConfigFromMap(config)
+func (sh *StreamHandler) LoadConfig(config map[string]interface{}) {
+	sh.GenericHandler.LoadConfig(config)
 	if writer, ok := config["writer"]; ok {
 		if w, ok := writerMap[writer.(string)]; ok {
-			sh.Writer = w
+			sh.SetWriter(w)
 		} else {
 			panic("unknown writer: " + writer.(string))
 		}
 	} else {
 		panic("'writer' field is required")
 	}
-}
-
-func (sh *StreamHandler) LoadConfigFromFile(fileName string) {
-	if file, err := os.Open(fileName); err == nil {
-		defer file.Close()
-		if code, err := ioutil.ReadAll(file); err == nil {
-			sh.LoadConfig(code)
-		} else {
-			panic(err)
-		}
-	} else {
-		panic(err)
-	}
-
 }

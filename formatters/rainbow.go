@@ -16,13 +16,7 @@
 
 package formatters
 
-import (
-	"encoding/json"
-	"io/ioutil"
-	"os"
-
-	"github.com/Xuyuanp/glogger"
-)
+import "github.com/Xuyuanp/glogger"
 
 func init() {
 	glogger.RegisterConfigLoaderBuilder("github.com/Xuyuanp/glogger/formatters.RainbowFormatter", func() glogger.ConfigLoader {
@@ -76,16 +70,7 @@ func (rf *RainbowFormatter) Format(rec *glogger.Record) string {
 	return newFmt
 }
 
-func (rf *RainbowFormatter) LoadConfig(config []byte) {
-	var m map[string]interface{}
-	if err := json.Unmarshal(config, &m); err == nil {
-		rf.LoadConfigFromMap(m)
-	} else {
-		panic(err)
-	}
-}
-
-func (rf *RainbowFormatter) LoadConfigFromMap(config map[string]interface{}) {
+func (rf *RainbowFormatter) LoadConfig(config map[string]interface{}) {
 	if fmt, ok := config["fmt"]; ok {
 		rf.Fmt = fmt.(string)
 	}
@@ -101,18 +86,5 @@ func (rf *RainbowFormatter) LoadConfigFromMap(config map[string]interface{}) {
 				panic("unknown color: " + name)
 			}
 		}
-	}
-}
-
-func (rf *RainbowFormatter) LoadConfigFromFile(fileName string) {
-	if file, err := os.Open(fileName); err == nil {
-		defer file.Close()
-		if code, err := ioutil.ReadAll(file); err == nil {
-			rf.LoadConfig(code)
-		} else {
-			panic(err)
-		}
-	} else {
-		panic(err)
 	}
 }

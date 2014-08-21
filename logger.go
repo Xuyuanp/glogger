@@ -17,10 +17,7 @@
 package glogger
 
 import (
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	"os"
 	"runtime"
 	"time"
 )
@@ -31,12 +28,14 @@ type gLogger struct {
 	handlerGroup
 	name  string
 	level LogLevel
+	ch    chan *Record
 }
 
 // NewLogger return a new Logger with debug level as default.
-func NewLogger() Logger {
+func NewLogger() *gLogger {
 	l := &gLogger{
 		level: DebugLevel,
+		ch:    make(chan *Record, 100000),
 	}
 	return l
 }
@@ -87,6 +86,15 @@ func (l *gLogger) log(level LogLevel, msg string) {
 	l.Handle(rec)
 }
 
+func (l *gLogger) run() {
+	for {
+		select {
+		case rec := <-l.ch:
+			l.Handle(rec)
+		}
+	}
+}
+
 func (l *gLogger) Level() LogLevel {
 	return l.level
 }
@@ -95,16 +103,7 @@ func (l *gLogger) SetLevel(level LogLevel) {
 	l.level = level
 }
 
-func (l *gLogger) LoadConfig(config []byte) {
-	var m map[string]interface{}
-	if err := json.Unmarshal(config, &m); err == nil {
-		l.LoadConfigFromMap(m)
-	} else {
-		panic(err)
-	}
-}
-
-func (l *gLogger) LoadConfigFromMap(config map[string]interface{}) {
+func (l *gLogger) LoadConfig(config map[string]interface{}) {
 	if level, ok := config["level"]; ok {
 		l.level = StringToLevel[level.(string)]
 	} else {
@@ -123,18 +122,5 @@ func (l *gLogger) LoadConfigFromMap(config map[string]interface{}) {
 		}
 	} else {
 		panic("'handlers' field is required")
-	}
-}
-
-func (l *gLogger) LoadConfigFromFile(fileName string) {
-	if file, err := os.Open(fileName); err == nil {
-		defer file.Close()
-		if code, err := ioutil.ReadAll(file); err == nil {
-			l.LoadConfig(code)
-		} else {
-			panic(err)
-		}
-	} else {
-		panic(err)
 	}
 }
