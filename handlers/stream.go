@@ -18,7 +18,9 @@ package handlers
 
 import (
 	"io"
+	"log"
 	"os"
+	"sync"
 
 	"github.com/Xuyuanp/glogger"
 )
@@ -31,18 +33,26 @@ func init() {
 
 type StreamHandler struct {
 	*GenericHandler
-	Writer io.Writer
+	nestedLogger *log.Logger
+	mu           sync.Mutex
 }
 
 func NewStreamHandler() *StreamHandler {
 	sh := &StreamHandler{
 		GenericHandler: NewHandler(),
+		nestedLogger:   log.New(os.Stdout, "", 0),
 	}
 	return sh
 }
 
-func (sh *StreamHandler) Emit(text string) {
-	sh.Writer.Write([]byte(text + "\n"))
+func (sh *StreamHandler) Handle(rec *glogger.Record) {
+	sh.nestedLogger.Println(sh.Format(rec))
+}
+
+func (sh *StreamHandler) SetWriter(writer io.Writer) {
+	sh.mu.Lock()
+	defer sh.mu.Unlock()
+	sh.nestedLogger = log.New(writer, "", 0)
 }
 
 var writerMap = map[string]io.Writer{
@@ -54,7 +64,7 @@ func (sh *StreamHandler) LoadConfig(config map[string]interface{}) {
 	sh.GenericHandler.LoadConfig(config)
 	if writer, ok := config["writer"]; ok {
 		if w, ok := writerMap[writer.(string)]; ok {
-			sh.Writer = w
+			sh.SetWriter(w)
 		} else {
 			panic("unknown writer: " + writer.(string))
 		}

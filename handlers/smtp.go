@@ -48,7 +48,8 @@ func NewSmtpHandler() *SmtpHandler {
 	return sh
 }
 
-func (sh *SmtpHandler) Emit(text string) {
+func (sh *SmtpHandler) Handle(rec *glogger.Record) {
+	text := sh.Format(rec)
 	header := make(map[string]string)
 	header["From"] = sh.Username
 	header["To"] = strings.Join(sh.To, ";")

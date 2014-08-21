@@ -16,11 +16,7 @@
 
 package handlers
 
-import (
-	"sync"
-
-	"github.com/Xuyuanp/glogger"
-)
+import "github.com/Xuyuanp/glogger"
 
 // GenericHandler is an abstract struct which fully implemented Handler interface
 // expected Emit method.
@@ -28,7 +24,6 @@ type GenericHandler struct {
 	glogger.GroupFilter
 	level     glogger.LogLevel
 	formatter glogger.Formatter
-	mu        sync.Mutex
 }
 
 func NewHandler() *GenericHandler {
@@ -52,10 +47,6 @@ func (gh *GenericHandler) Level() glogger.LogLevel {
 
 func (gh *GenericHandler) SetLevel(level glogger.LogLevel) {
 	gh.level = level
-}
-
-func (gh *GenericHandler) Mutex() *sync.Mutex {
-	return &(gh.mu)
 }
 
 func (gh *GenericHandler) LoadConfig(config map[string]interface{}) {

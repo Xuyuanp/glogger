@@ -19,6 +19,7 @@ package handlers
 import (
 	"fmt"
 	"os"
+	"sync"
 
 	"github.com/Xuyuanp/glogger"
 )
@@ -32,6 +33,7 @@ func init() {
 type FileHandler struct {
 	*StreamHandler
 	FileName string
+	mu       sync.Mutex
 }
 
 func NewFileHandler() *FileHandler {
@@ -41,22 +43,22 @@ func NewFileHandler() *FileHandler {
 	return fh
 }
 
-func (fh *FileHandler) Emit(text string) {
-	if fh.Writer == nil {
-		file, err := os.OpenFile(fh.FileName, os.O_CREATE|os.O_APPEND|os.O_RDWR, 0640)
-		if err != nil {
-			fmt.Fprintln(os.Stderr, err)
-			return
-		}
-		fh.Writer = file
+func (fh *FileHandler) SetFileName(fileName string) {
+	fh.mu.Lock()
+	defer fh.mu.Unlock()
+	fh.FileName = fileName
+	file, err := os.OpenFile(fh.FileName, os.O_CREATE|os.O_APPEND|os.O_RDWR, 0640)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		return
 	}
-	fh.StreamHandler.Emit(text)
+	fh.SetWriter(file)
 }
 
 func (fh *FileHandler) LoadConfig(config map[string]interface{}) {
 	fh.GenericHandler.LoadConfig(config)
 	if filename, ok := config["filename"]; ok {
-		fh.FileName = filename.(string)
+		fh.SetFileName(filename.(string))
 	} else {
 		panic("'filename' field is required")
 	}
