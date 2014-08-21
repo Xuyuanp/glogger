@@ -59,14 +59,6 @@ func (f *GroupFilter) Filter(rec *Record) bool {
 	}
 	return true
 }
-
-func (f *GroupFilter) LoadConfig(config []byte) {
-}
-
-func (f *GroupFilter) LoadConfigFromMap(config map[string]interface{}) {
-
-}
-
-func (f *GroupFilter) LoadConfigFromFile(fileName string) {
+func (f *GroupFilter) LoadConfig(config map[string]interface{}) {
 
 }
