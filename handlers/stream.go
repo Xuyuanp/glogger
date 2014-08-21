@@ -17,9 +17,7 @@
 package handlers
 
 import (
-	"encoding/json"
 	"io"
-	"io/ioutil"
 	"os"
 
 	"github.com/Xuyuanp/glogger"
@@ -52,17 +50,8 @@ var writerMap = map[string]io.Writer{
 	"stderr": os.Stderr,
 }
 
-func (sh *StreamHandler) LoadConfig(config []byte) {
-	var m map[string]interface{}
-	if err := json.Unmarshal(config, &m); err == nil {
-		sh.LoadConfigFromMap(m)
-	} else {
-		panic(err)
-	}
-}
-
-func (sh *StreamHandler) LoadConfigFromMap(config map[string]interface{}) {
-	sh.GenericHandler.LoadConfigFromMap(config)
+func (sh *StreamHandler) LoadConfig(config map[string]interface{}) {
+	sh.GenericHandler.LoadConfig(config)
 	if writer, ok := config["writer"]; ok {
 		if w, ok := writerMap[writer.(string)]; ok {
 			sh.Writer = w
@@ -72,18 +61,4 @@ func (sh *StreamHandler) LoadConfigFromMap(config map[string]interface{}) {
 	} else {
 		panic("'writer' field is required")
 	}
-}
-
-func (sh *StreamHandler) LoadConfigFromFile(fileName string) {
-	if file, err := os.Open(fileName); err == nil {
-		defer file.Close()
-		if code, err := ioutil.ReadAll(file); err == nil {
-			sh.LoadConfig(code)
-		} else {
-			panic(err)
-		}
-	} else {
-		panic(err)
-	}
-
 }

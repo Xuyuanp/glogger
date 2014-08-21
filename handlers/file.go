@@ -17,9 +17,7 @@
 package handlers
 
 import (
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 
 	"github.com/Xuyuanp/glogger"
@@ -55,33 +53,11 @@ func (fh *FileHandler) Emit(text string) {
 	fh.StreamHandler.Emit(text)
 }
 
-func (fh *FileHandler) LoadConfig(config []byte) {
-	var m map[string]interface{}
-	if err := json.Unmarshal(config, &m); err == nil {
-		fh.LoadConfigFromMap(m)
-	} else {
-		panic(err)
-	}
-}
-
-func (fh *FileHandler) LoadConfigFromMap(config map[string]interface{}) {
-	fh.GenericHandler.LoadConfigFromMap(config)
+func (fh *FileHandler) LoadConfig(config map[string]interface{}) {
+	fh.GenericHandler.LoadConfig(config)
 	if filename, ok := config["filename"]; ok {
 		fh.FileName = filename.(string)
 	} else {
 		panic("'filename' field is required")
-	}
-}
-
-func (fh *FileHandler) LoadConfigFromFile(fileName string) {
-	if file, err := os.Open(fileName); err == nil {
-		defer file.Close()
-		if code, err := ioutil.ReadAll(file); err == nil {
-			fh.LoadConfig(code)
-		} else {
-			panic(err)
-		}
-	} else {
-		panic(err)
 	}
 }

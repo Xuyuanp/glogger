@@ -18,9 +18,7 @@ package handlers
 
 import (
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/smtp"
 	"os"
 	"strings"
@@ -80,17 +78,8 @@ func (sh *SmtpHandler) Emit(text string) {
 	}
 }
 
-func (sh *SmtpHandler) LoadConfig(config []byte) {
-	var m map[string]interface{}
-	if err := json.Unmarshal(config, &m); err == nil {
-		sh.LoadConfigFromMap(m)
-	} else {
-		panic(err)
-	}
-}
-
-func (sh *SmtpHandler) LoadConfigFromMap(config map[string]interface{}) {
-	sh.GenericHandler.LoadConfigFromMap(config)
+func (sh *SmtpHandler) LoadConfig(config map[string]interface{}) {
+	sh.GenericHandler.LoadConfig(config)
 	if address, ok := config["address"]; ok {
 		sh.Address = address.(string)
 	} else {
@@ -115,18 +104,5 @@ func (sh *SmtpHandler) LoadConfigFromMap(config map[string]interface{}) {
 		sh.Subject = subject.(string)
 	} else {
 		panic("'subject' field is required")
-	}
-}
-
-func (sh *SmtpHandler) LoadConfigFromFile(fileName string) {
-	if file, err := os.Open(fileName); err == nil {
-		defer file.Close()
-		if code, err := ioutil.ReadAll(file); err == nil {
-			sh.LoadConfig(code)
-		} else {
-			panic(err)
-		}
-	} else {
-		panic(err)
 	}
 }
