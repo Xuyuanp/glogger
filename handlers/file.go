@@ -55,11 +55,14 @@ func (fh *FileHandler) SetFileName(fileName string) {
 	fh.SetWriter(file)
 }
 
-func (fh *FileHandler) LoadConfig(config map[string]interface{}) {
-	fh.GenericHandler.LoadConfig(config)
+func (fh *FileHandler) LoadConfig(config map[string]interface{}) error {
+	if err := fh.GenericHandler.LoadConfig(config); err != nil {
+		return err
+	}
 	if filename, ok := config["filename"]; ok {
 		fh.SetFileName(filename.(string))
 	} else {
-		panic("'filename' field is required")
+		return fmt.Errorf("'filename' field is required")
 	}
+	return nil
 }

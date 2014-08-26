@@ -17,6 +17,7 @@
 package handlers
 
 import (
+	"fmt"
 	"io"
 	"log"
 	"os"
@@ -60,15 +61,16 @@ var writerMap = map[string]io.Writer{
 	"stderr": os.Stderr,
 }
 
-func (sh *StreamHandler) LoadConfig(config map[string]interface{}) {
+func (sh *StreamHandler) LoadConfig(config map[string]interface{}) error {
 	sh.GenericHandler.LoadConfig(config)
 	if writer, ok := config["writer"]; ok {
 		if w, ok := writerMap[writer.(string)]; ok {
 			sh.SetWriter(w)
 		} else {
-			panic("unknown writer: " + writer.(string))
+			return fmt.Errorf("unknown writer: " + writer.(string))
 		}
 	} else {
-		panic("'writer' field is required")
+		return fmt.Errorf("'writer' field is required")
 	}
+	return nil
 }

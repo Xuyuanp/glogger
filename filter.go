@@ -59,6 +59,6 @@ func (f *GroupFilter) Filter(rec *Record) bool {
 	}
 	return true
 }
-func (f *GroupFilter) LoadConfig(config map[string]interface{}) {
-
+func (f *GroupFilter) LoadConfig(config map[string]interface{}) error {
+	return nil
 }

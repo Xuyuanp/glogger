@@ -18,6 +18,7 @@ package glogger
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"os"
 )
@@ -27,7 +28,7 @@ type ConfigLoaderBuilder func() ConfigLoader
 
 // ConfigLoader provide method to load config from bytes, string or a file.
 type ConfigLoader interface {
-	LoadConfig(m map[string]interface{})
+	LoadConfig(m map[string]interface{}) error
 }
 
 var configLoaderBuilderRegister = NewRegister()
@@ -46,77 +47,85 @@ func GetConfigLoaderBuilder(name string) ConfigLoaderBuilder {
 }
 
 // LoadConfig parse the json format configuration.
-func LoadConfig(config []byte) {
+func LoadConfig(config []byte) error {
 	var configMap map[string]map[string]map[string]interface{}
-	err := json.Unmarshal(config, &configMap)
-	if err != nil {
-		panic(err)
+	if err := json.Unmarshal(config, &configMap); err != nil {
+		return err
 	}
 
-	process := func(name string, conf map[string]interface{}, callback func(loader ConfigLoader)) {
+	process := func(name string, conf map[string]interface{}, callback func(loader ConfigLoader)) error {
 		bn, yes := conf["builder"]
 		var builderName string
 		if !yes {
-			panic("'build' field is required for section " + name)
+			return fmt.Errorf("'build' field is required for section %s", name)
 		}
 		builderName = bn.(string)
 		builder := GetConfigLoaderBuilder(builderName)
 		if builder == nil {
-			panic("Builder named " + builderName + " doesn't exist")
+			return fmt.Errorf("Builder named %s doesn't exist", builderName)
 		}
 		loader := builder()
-		loader.LoadConfig(conf)
+		if err := loader.LoadConfig(conf); err != nil {
+			return err
+		}
 		callback(loader)
+		return nil
 	}
 
 	filters, ok := configMap["filters"]
 	if ok {
 		for name, conf := range filters {
-			process(name, conf, func(loader ConfigLoader) {
+			if err := process(name, conf, func(loader ConfigLoader) {
 				filter := loader.(Filter)
 				RegisterFilter(name, filter)
-			})
+			}); err != nil {
+				return err
+			}
 		}
 	}
 	formatters, ok := configMap["formatters"]
 	if ok {
 		for name, conf := range formatters {
-			process(name, conf, func(loader ConfigLoader) {
+			if err := process(name, conf, func(loader ConfigLoader) {
 				formatter := loader.(Formatter)
 				RegisterFormatter(name, formatter)
-			})
+			}); err != nil {
+				return err
+			}
 		}
 	}
 	handlers, ok := configMap["handlers"]
 	if ok {
 		for name, conf := range handlers {
-			process(name, conf, func(loader ConfigLoader) {
+			if err := process(name, conf, func(loader ConfigLoader) {
 				handler := loader.(Handler)
 				RegisterHandler(name, handler)
-			})
+			}); err != nil {
+				return err
+			}
 		}
 	}
 	loggers, ok := configMap["loggers"]
 	if ok {
 		for name, conf := range loggers {
 			logger := NewLogger()
-			logger.LoadConfig(conf)
+			if err := logger.LoadConfig(conf); err != nil {
+				return err
+			}
 			RegisterLogger(name, logger)
 		}
 	}
+	return nil
 }
 
 // LoadConfigFromFile read file's content and call the LoadConfig method.
-func LoadConfigFromFile(fileName string) {
-	file, err := os.Open(fileName)
-	if err != nil {
-		panic(err)
+func LoadConfigFromFile(fileName string) error {
+	var err error
+	if file, err := os.Open(fileName); err == nil {
+		defer file.Close()
+		if code, err := ioutil.ReadAll(file); err == nil {
+			return LoadConfig(code)
+		}
 	}
-	defer file.Close()
-
-	code, err := ioutil.ReadAll(file)
-	if err != nil {
-		panic(err)
-	}
-	LoadConfig(code)
+	return err
 }

@@ -103,24 +103,25 @@ func (l *gLogger) SetLevel(level LogLevel) {
 	l.level = level
 }
 
-func (l *gLogger) LoadConfig(config map[string]interface{}) {
+func (l *gLogger) LoadConfig(config map[string]interface{}) error {
 	if level, ok := config["level"]; ok {
 		l.level = StringToLevel[level.(string)]
 	} else {
-		panic("'level' field is required")
+		return fmt.Errorf("'level' field is required")
 	}
 	if handlers, ok := config["handlers"]; ok {
 		if len(handlers.([]interface{})) == 0 {
-			panic("handler name is required")
+			return fmt.Errorf("handler name is required")
 		}
 		for _, hname := range handlers.([]interface{}) {
 			if handler := GetHandler(hname.(string)); handler != nil {
 				l.AddHandler(handler)
 			} else {
-				panic("unknown handler name: " + hname.(string))
+				return fmt.Errorf("unknown handler name: %s", hname.(string))
 			}
 		}
 	} else {
-		panic("'handlers' field is required")
+		return fmt.Errorf("'handlers' field is required")
 	}
+	return nil
 }
