@@ -75,8 +75,8 @@ func (rf *RainbowFormatter) Format(rec *glogger.Record) string {
 }
 
 func (rf *RainbowFormatter) LoadConfig(config map[string]interface{}) error {
-	if fmt, ok := config["fmt"]; ok {
-		rf.Fmt = fmt.(string)
+	if format, ok := config["fmt"]; ok {
+		rf.Fmt = format.(string)
 	}
 	if timefmt, ok := config["timefmt"]; ok {
 		rf.TimeFmt = timefmt.(string)
