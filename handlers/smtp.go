@@ -79,31 +79,34 @@ func (sh *SmtpHandler) Handle(rec *glogger.Record) {
 	}
 }
 
-func (sh *SmtpHandler) LoadConfig(config map[string]interface{}) {
-	sh.GenericHandler.LoadConfig(config)
+func (sh *SmtpHandler) LoadConfig(config map[string]interface{}) error {
+	if err := sh.GenericHandler.LoadConfig(config); err != nil {
+		return err
+	}
 	if address, ok := config["address"]; ok {
 		sh.Address = address.(string)
 	} else {
-		panic("'address' field is required")
+		return fmt.Errorf("'address' field is required")
 	}
 	if username, ok := config["username"]; ok {
 		sh.Username = username.(string)
 	} else {
-		panic("'username' field is required")
+		return fmt.Errorf("'username' field is required")
 	}
 	if password, ok := config["password"]; ok {
 		sh.Password = password.(string)
 	} else {
-		panic("'password' field is required")
+		return fmt.Errorf("'password' field is required")
 	}
 	if to, ok := config["to"]; ok {
 		sh.To = strings.Split(to.(string), ";")
 	} else {
-		panic("'to' field is required")
+		return fmt.Errorf("'to' field is required")
 	}
 	if subject, ok := config["subject"]; ok {
 		sh.Subject = subject.(string)
 	} else {
-		panic("'subject' field is required")
+		return fmt.Errorf("'subject' field is required")
 	}
+	return nil
 }

@@ -77,17 +77,15 @@ func (df *DefaultFormatter) Format(rec *glogger.Record) string {
 	return fmt.Sprintf(newFmt, args...)
 }
 
-func (df *DefaultFormatter) LoadConfigJson(config []byte) {
-	err := json.Unmarshal(config, df)
-	if err != nil {
-		panic(err)
-	}
+func (df *DefaultFormatter) LoadConfigJson(config []byte) error {
+	return json.Unmarshal(config, df)
 }
 
-func (df *DefaultFormatter) LoadConfig(config map[string]interface{}) {
+func (df *DefaultFormatter) LoadConfig(config map[string]interface{}) error {
 	if code, err := json.Marshal(config); err == nil {
-		df.LoadConfigJson(code)
+		return df.LoadConfigJson(code)
 	} else {
-		panic(err)
+		return err
 	}
+	return nil
 }

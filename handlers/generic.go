@@ -16,7 +16,11 @@
 
 package handlers
 
-import "github.com/Xuyuanp/glogger"
+import (
+	"fmt"
+
+	"github.com/Xuyuanp/glogger"
+)
 
 // GenericHandler is an abstract struct which fully implemented Handler interface
 // expected Emit method.
@@ -49,23 +53,24 @@ func (gh *GenericHandler) SetLevel(level glogger.LogLevel) {
 	gh.level = level
 }
 
-func (gh *GenericHandler) LoadConfig(config map[string]interface{}) {
+func (gh *GenericHandler) LoadConfig(config map[string]interface{}) error {
 	if level, ok := config["level"]; ok {
 		if l, ok := glogger.StringToLevel[level.(string)]; ok {
 			gh.level = l
 		} else {
-			panic("unknown level: " + level.(string))
+			return fmt.Errorf("unknown level: " + level.(string))
 		}
 	} else {
-		panic("'level' field is required")
+		return fmt.Errorf("'level' field is required")
 	}
 	if formatter, ok := config["formatter"]; ok {
 		if f := glogger.GetFormatter(formatter.(string)); f != nil {
 			gh.formatter = f
 		} else {
-			panic("unknown formater name: " + formatter.(string))
+			return fmt.Errorf("unknown formater name: " + formatter.(string))
 		}
 	} else {
-		panic("'formater' field is required")
+		return fmt.Errorf("'formater' field is required")
 	}
+	return nil
 }

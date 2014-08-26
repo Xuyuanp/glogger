@@ -16,7 +16,11 @@
 
 package formatters
 
-import "github.com/Xuyuanp/glogger"
+import (
+	"fmt"
+
+	"github.com/Xuyuanp/glogger"
+)
 
 func init() {
 	glogger.RegisterConfigLoaderBuilder("github.com/Xuyuanp/glogger/formatters.RainbowFormatter", func() glogger.ConfigLoader {
@@ -70,7 +74,7 @@ func (rf *RainbowFormatter) Format(rec *glogger.Record) string {
 	return newFmt
 }
 
-func (rf *RainbowFormatter) LoadConfig(config map[string]interface{}) {
+func (rf *RainbowFormatter) LoadConfig(config map[string]interface{}) error {
 	if fmt, ok := config["fmt"]; ok {
 		rf.Fmt = fmt.(string)
 	}
@@ -83,8 +87,9 @@ func (rf *RainbowFormatter) LoadConfig(config map[string]interface{}) {
 			if colori, yes := colorConfig[name]; yes {
 				rf.LevelColors[level] = colori.(string)
 			} else {
-				panic("unknown color: " + name)
+				return fmt.Errorf("unknown color: " + name)
 			}
 		}
 	}
+	return nil
 }
