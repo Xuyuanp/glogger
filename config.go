@@ -53,7 +53,7 @@ func LoadConfig(config []byte) error {
 		return err
 	}
 
-	process := func(name string, conf map[string]interface{}, callback func(loader ConfigLoader)) error {
+	processFunc := func(name string, conf map[string]interface{}, callback func(loader ConfigLoader)) error {
 		bn, yes := conf["builder"]
 		var builderName string
 		if !yes {
@@ -75,7 +75,7 @@ func LoadConfig(config []byte) error {
 	filters, ok := configMap["filters"]
 	if ok {
 		for name, conf := range filters {
-			if err := process(name, conf, func(loader ConfigLoader) {
+			if err := processFunc(name, conf, func(loader ConfigLoader) {
 				filter := loader.(Filter)
 				RegisterFilter(name, filter)
 			}); err != nil {
@@ -86,7 +86,7 @@ func LoadConfig(config []byte) error {
 	formatters, ok := configMap["formatters"]
 	if ok {
 		for name, conf := range formatters {
-			if err := process(name, conf, func(loader ConfigLoader) {
+			if err := processFunc(name, conf, func(loader ConfigLoader) {
 				formatter := loader.(Formatter)
 				RegisterFormatter(name, formatter)
 			}); err != nil {
@@ -97,7 +97,7 @@ func LoadConfig(config []byte) error {
 	handlers, ok := configMap["handlers"]
 	if ok {
 		for name, conf := range handlers {
-			if err := process(name, conf, func(loader ConfigLoader) {
+			if err := processFunc(name, conf, func(loader ConfigLoader) {
 				handler := loader.(Handler)
 				RegisterHandler(name, handler)
 			}); err != nil {
