@@ -39,15 +39,15 @@ var defaultLevelColors = map[glogger.LogLevel]string{
 var defaultRainbowFormat = "[${time} ${log_color}${levelname}${reset} ${dim}${green}${sfile}${reset}:${line} ${dim_cyan}${func}${reset}] ${msg}"
 
 type RainbowFormatter struct {
-	*DefaultFormatter
+	*glogger.DefaultFormatter
 	LevelColors map[glogger.LogLevel]string
 }
 
 func NewRainbowFormatter() *RainbowFormatter {
 	rf := &RainbowFormatter{
-		DefaultFormatter: &DefaultFormatter{
+		DefaultFormatter: &glogger.DefaultFormatter{
 			Fmt:     defaultRainbowFormat,
-			TimeFmt: defaultTimeFormat,
+			TimeFmt: glogger.DefaultTimeFormat,
 		},
 		LevelColors: defaultLevelColors,
 	}
@@ -57,7 +57,7 @@ func NewRainbowFormatter() *RainbowFormatter {
 func (rf *RainbowFormatter) Format(rec *glogger.Record) string {
 	newFmt := rf.DefaultFormatter.Format(rec)
 
-	newFmt = fieldHolderRegexp.ReplaceAllStringFunc(newFmt, func(match string) string {
+	newFmt = glogger.FieldHolderRegexp.ReplaceAllStringFunc(newFmt, func(match string) string {
 		m := match[2 : len(match)-1]
 		if m == "log_color" {
 			m, _ = rf.LevelColors[rec.Level]
