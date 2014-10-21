@@ -62,7 +62,7 @@ func LoadConfig(config []byte) error {
 		builderName = bn.(string)
 		builder := GetConfigLoaderBuilder(builderName)
 		if builder == nil {
-			return fmt.Errorf("Builder named %s doesn't exist", builderName)
+			return fmt.Errorf("unknown builder name: %s", builderName)
 		}
 		loader := builder()
 		if err := loader.LoadConfig(conf); err != nil {
@@ -86,6 +86,9 @@ func LoadConfig(config []byte) error {
 	formatters, ok := configMap["formatters"]
 	if ok {
 		for name, conf := range formatters {
+			if builder, ok := conf["builder"]; !ok || builder.(string) == "default" {
+				conf["builder"] = "github.com/Xuyuanp/glogger.DefaultFormatter"
+			}
 			if err := processFunc(name, conf, func(loader ConfigLoader) {
 				formatter := loader.(Formatter)
 				RegisterFormatter(name, formatter)
@@ -97,6 +100,9 @@ func LoadConfig(config []byte) error {
 	handlers, ok := configMap["handlers"]
 	if ok {
 		for name, conf := range handlers {
+			if builder, ok := conf["builder"]; !ok || builder.(string) == "default" {
+				conf["builder"] = "github.com/Xuyuanp/glogger.StreamHandler"
+			}
 			if err := processFunc(name, conf, func(loader ConfigLoader) {
 				handler := loader.(Handler)
 				RegisterHandler(name, handler)
