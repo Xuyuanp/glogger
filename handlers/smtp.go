@@ -32,8 +32,9 @@ func init() {
 	})
 }
 
+// SmtpHandler struct
 type SmtpHandler struct {
-	*GenericHandler
+	*glogger.GenericHandler
 	Address  string
 	Username string
 	Password string
@@ -41,13 +42,15 @@ type SmtpHandler struct {
 	Subject  string
 }
 
+// NewSmtpHandler return a new SmtpHandler
 func NewSmtpHandler() *SmtpHandler {
 	sh := &SmtpHandler{
-		GenericHandler: NewHandler(),
+		GenericHandler: glogger.NewHandler(),
 	}
 	return sh
 }
 
+// Handle a record
 func (sh *SmtpHandler) Handle(rec *glogger.Record) {
 	text := sh.Format(rec)
 	header := make(map[string]string)
@@ -79,6 +82,7 @@ func (sh *SmtpHandler) Handle(rec *glogger.Record) {
 	}
 }
 
+// LoadConfig load configuration from a map
 func (sh *SmtpHandler) LoadConfig(config map[string]interface{}) error {
 	if err := sh.GenericHandler.LoadConfig(config); err != nil {
 		return err

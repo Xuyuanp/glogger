@@ -30,19 +30,22 @@ func init() {
 	})
 }
 
+// FileHandler struct
 type FileHandler struct {
-	*StreamHandler
+	*glogger.StreamHandler
 	FileName string
 	mu       sync.Mutex
 }
 
+// NewFileHandler return a new FileHandler
 func NewFileHandler() *FileHandler {
 	fh := &FileHandler{
-		StreamHandler: NewStreamHandler(),
+		StreamHandler: glogger.NewStreamHandler(),
 	}
 	return fh
 }
 
+// SetFileName set the name of file to output
 func (fh *FileHandler) SetFileName(fileName string) {
 	fh.mu.Lock()
 	defer fh.mu.Unlock()
@@ -55,6 +58,7 @@ func (fh *FileHandler) SetFileName(fileName string) {
 	fh.SetWriter(file)
 }
 
+// LoadConfig load configuration from a map
 func (fh *FileHandler) LoadConfig(config map[string]interface{}) error {
 	if err := fh.GenericHandler.LoadConfig(config); err != nil {
 		return err
