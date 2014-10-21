@@ -23,6 +23,7 @@ import (
 	"strings"
 )
 
+// Formatter interface
 type Formatter interface {
 	ConfigLoader
 	Format(rec *Record) string
@@ -30,10 +31,12 @@ type Formatter interface {
 
 var formatterRegister = NewRegister()
 
+// RegisterFormatter register a formatter with the name
 func RegisterFormatter(name string, formatter Formatter) {
 	formatterRegister.Register(name, formatter)
 }
 
+// GetFormatter return formater regeistered by the name
 func GetFormatter(name string) Formatter {
 	if v := formatterRegister.Get(name); v != nil {
 		return v.(Formatter)
@@ -47,14 +50,19 @@ func init() {
 	})
 }
 
+// DefaultFormatter struct
 type DefaultFormatter struct {
 	TimeFmt string `json:timefmt`
 	Fmt     string `json:fmt`
 }
 
-var DefaultFormat = "[${time} ${levelname} ${sfile}:${line} ${func}] ${msg}"
+// DefaultFormat is default format of log message
+var DefaultFormat = "[${time} ${levelname} ${sfile}:${line}] ${msg}"
+
+// DefaultTimeFormat is default time format
 var DefaultTimeFormat = "2006-01-02 15:04:05"
 
+// NewDefaultFormatter return a new DefaultFormatter
 func NewDefaultFormatter() *DefaultFormatter {
 	df := &DefaultFormatter{
 		TimeFmt: DefaultTimeFormat,
@@ -63,8 +71,10 @@ func NewDefaultFormatter() *DefaultFormatter {
 	return df
 }
 
+// FieldHolderRegexp
 var FieldHolderRegexp = regexp.MustCompile(`\$\{\w+\}`)
 
+// Format formats a record to string
 func (df *DefaultFormatter) Format(rec *Record) string {
 	args := []interface{}{}
 	newFmt := df.Fmt
@@ -93,15 +103,16 @@ func (df *DefaultFormatter) Format(rec *Record) string {
 	return fmt.Sprintf(newFmt, args...)
 }
 
-func (df *DefaultFormatter) LoadConfigJson(config []byte) error {
+// LoadConfigJSON load configuration from json
+func (df *DefaultFormatter) LoadConfigJSON(config []byte) error {
 	return json.Unmarshal(config, df)
 }
 
+// LoadConfig load configuration from a map
 func (df *DefaultFormatter) LoadConfig(config map[string]interface{}) error {
+	err := nil
 	if code, err := json.Marshal(config); err == nil {
-		return df.LoadConfigJson(code)
-	} else {
-		return err
+		return df.LoadConfigJSON(code)
 	}
-	return nil
+	return err
 }

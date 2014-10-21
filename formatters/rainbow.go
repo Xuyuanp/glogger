@@ -38,11 +38,13 @@ var defaultLevelColors = map[glogger.LogLevel]string{
 
 var defaultRainbowFormat = "[${time} ${log_color}${levelname}${reset} ${dim}${green}${sfile}${reset}:${line} ${dim_cyan}${func}${reset}] ${msg}"
 
+// RainbowFormatter is a formatter to format record colorized
 type RainbowFormatter struct {
 	*glogger.DefaultFormatter
 	LevelColors map[glogger.LogLevel]string
 }
 
+// NewRainbowFormatter return a new RainbowFormatter
 func NewRainbowFormatter() *RainbowFormatter {
 	rf := &RainbowFormatter{
 		DefaultFormatter: &glogger.DefaultFormatter{
@@ -54,6 +56,7 @@ func NewRainbowFormatter() *RainbowFormatter {
 	return rf
 }
 
+// Format format record colorized
 func (rf *RainbowFormatter) Format(rec *glogger.Record) string {
 	newFmt := rf.DefaultFormatter.Format(rec)
 
@@ -74,6 +77,7 @@ func (rf *RainbowFormatter) Format(rec *glogger.Record) string {
 	return newFmt
 }
 
+// LoadConfig load configuration from a map
 func (rf *RainbowFormatter) LoadConfig(config map[string]interface{}) error {
 	if format, ok := config["fmt"]; ok {
 		rf.Fmt = format.(string)

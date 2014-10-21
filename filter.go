@@ -18,6 +18,7 @@ package glogger
 
 import "container/list"
 
+// Filter interface
 type Filter interface {
 	ConfigLoader
 	Filter(rec *Record) bool
@@ -25,10 +26,12 @@ type Filter interface {
 
 var filterRegister = NewRegister()
 
+// RegisterFilter register a Filter with the name
 func RegisterFilter(name string, filter Filter) {
 	filterRegister.Register(name, filter)
 }
 
+// GetFilter return a Filter regeistered by the name
 func GetFilter(name string) Filter {
 	if v := filterRegister.Get(name); v != nil {
 		return v.(Filter)
@@ -36,10 +39,12 @@ func GetFilter(name string) Filter {
 	return nil
 }
 
+// GroupFilter struct
 type GroupFilter struct {
 	filters *list.List
 }
 
+// AddFilter add a filter to a filter list
 func (f *GroupFilter) AddFilter(ft Filter) {
 	if f.filters == nil {
 		f.filters = list.New()
@@ -47,6 +52,7 @@ func (f *GroupFilter) AddFilter(ft Filter) {
 	f.filters.PushBack(ft)
 }
 
+// Filter return true only if all the filters return true, or false if not
 func (f *GroupFilter) Filter(rec *Record) bool {
 	if f.filters == nil {
 		return true
@@ -59,6 +65,8 @@ func (f *GroupFilter) Filter(rec *Record) bool {
 	}
 	return true
 }
+
+// LoadConfig load configuration from a map, not implemented currenttly
 func (f *GroupFilter) LoadConfig(config map[string]interface{}) error {
 	return nil
 }

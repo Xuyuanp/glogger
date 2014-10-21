@@ -16,6 +16,7 @@
 
 package formatters
 
+// EscapeCodes is a map from color to code
 var EscapeCodes = map[string]string{
 	"reset":          "\033[0m",
 	"bold":           "\033[01m",
