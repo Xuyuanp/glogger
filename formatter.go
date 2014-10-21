@@ -110,7 +110,7 @@ func (df *DefaultFormatter) LoadConfigJSON(config []byte) error {
 
 // LoadConfig load configuration from a map
 func (df *DefaultFormatter) LoadConfig(config map[string]interface{}) error {
-	err := nil
+	var err error
 	if code, err := json.Marshal(config); err == nil {
 		return df.LoadConfigJSON(code)
 	}
