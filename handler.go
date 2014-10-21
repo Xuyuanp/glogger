@@ -61,6 +61,17 @@ func (hg *handlerGroup) AddHandler(h Handler) {
 	hg.handlers.PushBack(h)
 }
 
+func (hg *handlerGroup) SetHandlers(handlers ...Handler) {
+	hg.ClearHandlers()
+	for _, h := range handlers {
+		hg.handlers.PushBack(h)
+	}
+}
+
+func (hg *handlerGroup) ClearHandlers() {
+	hg.handlers = list.New()
+}
+
 func (hg *handlerGroup) Handle(rec *Record) {
 	if hg.handlers == nil {
 		return
@@ -115,15 +126,17 @@ func (gh *GenericHandler) SetLevel(level LogLevel) {
 
 // LoadConfig load configuration from a map
 func (gh *GenericHandler) LoadConfig(config map[string]interface{}) error {
+	// Load log level, default DebugLevel
 	if level, ok := config["level"]; ok {
 		if l, ok := StringToLevel[level.(string)]; ok {
 			gh.level = l
 		} else {
-			return fmt.Errorf("unknown level: " + level.(string))
+			return fmt.Errorf("unknown log level: %s", level.(string))
 		}
 	} else {
-		return fmt.Errorf("'level' field is required")
+		gh.level = DebugLevel
 	}
+	// Load Formatter, default is DefaultFormatter
 	if formatter, ok := config["formatter"]; ok {
 		if f := GetFormatter(formatter.(string)); f != nil {
 			gh.formatter = f
@@ -131,7 +144,19 @@ func (gh *GenericHandler) LoadConfig(config map[string]interface{}) error {
 			return fmt.Errorf("unknown formater name: " + formatter.(string))
 		}
 	} else {
-		return fmt.Errorf("'formater' field is required")
+		gh.formatter = NewDefaultFormatter()
+	}
+	// Load filters
+	if filters, ok := config["filters"]; ok {
+		if len(filters.([]interface{})) > 0 {
+			for _, fname := range filters.([]interface{}) {
+				if filter := GetFilter(fname.(string)); filter != nil {
+					gh.AddFilter(filter)
+				} else {
+					return fmt.Errorf("unknown filter name: %s", fname.(string))
+				}
+			}
+		}
 	}
 	return nil
 }
@@ -185,7 +210,7 @@ func (sh *StreamHandler) LoadConfig(config map[string]interface{}) error {
 			return fmt.Errorf("unknown writer: " + writer.(string))
 		}
 	} else {
-		return fmt.Errorf("'writer' field is required")
+		sh.SetWriter(os.Stdout)
 	}
 	return nil
 }

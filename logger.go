@@ -22,27 +22,28 @@ import (
 	"time"
 )
 
-// gLogger is the default Logger
-type gLogger struct {
+// Logger is the default Logger
+type Logger struct {
 	GroupFilter
 	handlerGroup
-	name  string
-	level LogLevel
-	ch    chan *Record
+	Name   string
+	Level  LogLevel
+	ch     chan *Record
+	parent *Logger
 }
 
 // NewLogger return a new Logger with debug level as default.
-func NewLogger() *gLogger {
-	l := &gLogger{
-		level: DebugLevel,
+func NewLogger() *Logger {
+	l := &Logger{
+		Level: DebugLevel,
 		ch:    make(chan *Record, 100000),
 	}
 	return l
 }
 
 // Default functions return a logger registered by name 'root',
-// or a new gLogger with default Handler and Formatter, and registered as 'root' automatically.
-func Default() Logger {
+// or a new Logger with default Handler and Formatter, and registered as 'root' automatically.
+func Default() *Logger {
 	if l := GetLogger("root"); l != nil {
 		return l
 	}
@@ -53,33 +54,35 @@ func Default() Logger {
 	return l
 }
 
+var std = Default()
+
 // Debug see details in Logger interface
-func (l *gLogger) Debug(f string, v ...interface{}) {
+func (l *Logger) Debug(f string, v ...interface{}) {
 	l.log(DebugLevel, fmt.Sprintf(f, v...))
 }
 
 // Info see details in Logger interface
-func (l *gLogger) Info(f string, v ...interface{}) {
+func (l *Logger) Info(f string, v ...interface{}) {
 	l.log(InfoLevel, fmt.Sprintf(f, v...))
 }
 
 // Warning see details in Logger interface
-func (l *gLogger) Warning(f string, v ...interface{}) {
+func (l *Logger) Warning(f string, v ...interface{}) {
 	l.log(WarnLevel, fmt.Sprintf(f, v...))
 }
 
 // Error see details in Logger interface
-func (l *gLogger) Error(f string, v ...interface{}) {
+func (l *Logger) Error(f string, v ...interface{}) {
 	l.log(ErrorLevel, fmt.Sprintf(f, v...))
 }
 
 // Critical see details in Logger interface
-func (l *gLogger) Critical(f string, v ...interface{}) {
+func (l *Logger) Critical(f string, v ...interface{}) {
 	l.log(CriticalLevel, fmt.Sprintf(f, v...))
 }
 
-func (l *gLogger) log(level LogLevel, msg string) {
-	if level < l.level {
+func (l *Logger) log(level LogLevel, msg string) {
+	if level < l.Level {
 		return
 	}
 	now := time.Now()
@@ -92,14 +95,39 @@ func (l *gLogger) log(level LogLevel, msg string) {
 	} else {
 		funcname = runtime.FuncForPC(pc).Name()
 	}
-	rec := NewRecord(l.name, now, level, file, funcname, line, msg)
+	rec := NewRecord(l.Name, now, level, file, funcname, line, msg)
 	if !l.Filter(rec) {
 		return
 	}
 	l.Handle(rec)
 }
 
-func (l *gLogger) run() {
+// Debug function calls default logger's Debug method
+func Debug(f string, v ...interface{}) {
+	Default().Debug(f, v...)
+}
+
+// Info function calls default logger's Info method
+func Info(f string, v ...interface{}) {
+	Default().Info(f, v...)
+}
+
+// Warning function calls default logger's Warning method
+func Warning(f string, v ...interface{}) {
+	Default().Warning(f, v...)
+}
+
+// Error function calls default logger's Error method
+func Error(f string, v ...interface{}) {
+	Default().Error(f, v...)
+}
+
+// Critical function calls default logger's Critical method
+func Critical(f string, v ...interface{}) {
+	Default().Critical(f, v...)
+}
+
+func (l *Logger) run() {
 	for {
 		select {
 		case rec := <-l.ch:
@@ -108,24 +136,20 @@ func (l *gLogger) run() {
 	}
 }
 
-func (l *gLogger) Level() LogLevel {
-	return l.level
-}
-
-func (l *gLogger) SetLevel(level LogLevel) {
-	l.level = level
-}
-
-func (l *gLogger) LoadConfig(config map[string]interface{}) error {
-	if level, ok := config["level"]; ok {
-		l.level = StringToLevel[level.(string)]
-	} else {
-		return fmt.Errorf("'level' field is required")
-	}
-	if handlers, ok := config["handlers"]; ok {
-		if len(handlers.([]interface{})) == 0 {
-			return fmt.Errorf("handler name is required")
+func (l *Logger) LoadConfig(config map[string]interface{}) error {
+	// Load log level, default is DebugLevel
+	if blevel, ok := config["level"]; ok {
+		if level, ok := StringToLevel[blevel.(string)]; ok {
+			l.Level = level
+		} else {
+			return fmt.Errorf("unknown log level: %s", blevel.(string))
 		}
+	} else {
+		l.Level = DebugLevel
+	}
+	// Load handlers, default is StreamHandler
+	if handlers, ok := config["handlers"]; ok && len(handlers.([]interface{})) > 0 {
+		l.ClearHandlers()
 		for _, hname := range handlers.([]interface{}) {
 			if handler := GetHandler(hname.(string)); handler != nil {
 				l.AddHandler(handler)
@@ -134,7 +158,20 @@ func (l *gLogger) LoadConfig(config map[string]interface{}) error {
 			}
 		}
 	} else {
-		return fmt.Errorf("'handlers' field is required")
+		h := NewStreamHandler()
+		l.SetHandlers(h)
+	}
+	// Load filters
+	if filters, ok := config["filters"]; ok {
+		if len(filters.([]interface{})) > 0 {
+			for _, fname := range filters.([]interface{}) {
+				if filter := GetFilter(fname.(string)); filter != nil {
+					l.AddFilter(filter)
+				} else {
+					return fmt.Errorf("unknown filter name: %s", fname.(string))
+				}
+			}
+		}
 	}
 	return nil
 }

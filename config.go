@@ -108,6 +108,13 @@ func LoadConfig(config []byte) error {
 	loggers, ok := configMap["loggers"]
 	if ok {
 		for name, conf := range loggers {
+			if name == "root" {
+				logger := GetLogger("root")
+				if err := logger.LoadConfig(conf); err != nil {
+					return err
+				}
+				continue
+			}
 			logger := NewLogger()
 			if err := logger.LoadConfig(conf); err != nil {
 				return err
