@@ -45,7 +45,7 @@ func main() {
 {
     "formatters": {
         "default": {
-            "builder": "github.com/Xuyuanp/glogger/formatters.DefaultFormatter",
+            "builder": "github.com/Xuyuanp/glogger.DefaultFormatter",
             "fmt": "${time} ${levelname} ${sfile}:${line} ${msg}",
             "timefmt": "2006-01-02 15:04:05"
         },
@@ -70,7 +70,7 @@ func main() {
             "filename": "log/record.log"
         },
         "console": {
-            "builder": "github.com/Xuyuanp/glogger/handlers.StreamHandler",
+            "builder": "github.com/Xuyuanp/glogger.StreamHandler",
             "level": "DEBUG",
             "writer": "stdout",
             "formatter": "rainbow"
