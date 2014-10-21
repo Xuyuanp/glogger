@@ -96,3 +96,31 @@ func UnregisterLogger(name string) Logger {
 func RegisterLogger(name string, l Logger) {
 	loggerRegister.Register(name, l)
 }
+
+// Default Logger
+var std = Default()
+
+// Debug function calls default logger's Debug method
+func Debug(f string, v ...interface{}) {
+	std.Debug(f, v...)
+}
+
+// Info function calls default logger's Info method
+func Info(f string, v ...interface{}) {
+	std.Info(f, v...)
+}
+
+// Warning function calls default logger's Warning method
+func Warning(f string, v ...interface{}) {
+	std.Warning(f, v...)
+}
+
+// Error function calls default logger's Error method
+func Error(f string, v ...interface{}) {
+	std.Error(f, v...)
+}
+
+// Critical function calls default logger's Critical method
+func Critical(f string, v ...interface{}) {
+	std.Critical(f, v...)
+}

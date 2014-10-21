@@ -40,6 +40,19 @@ func NewLogger() *gLogger {
 	return l
 }
 
+// Default functions return a logger registered by name 'root',
+// or a new gLogger with default Handler and Formatter, and registered as 'root' automatically.
+func Default() Logger {
+	if l := GetLogger("root"); l != nil {
+		return l
+	}
+	l := NewLogger()
+	h := NewStreamHandler()
+	l.AddHandler(h)
+	RegisterLogger("root", l)
+	return l
+}
+
 // Debug see details in Logger interface
 func (l *gLogger) Debug(f string, v ...interface{}) {
 	l.log(DebugLevel, fmt.Sprintf(f, v...))
