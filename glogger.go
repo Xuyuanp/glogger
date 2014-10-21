@@ -19,6 +19,9 @@ package glogger
 // LogLevel type
 type LogLevel uint8
 
+// AutoRoot is a switcher that controlls GetLogger result
+var AutoRoot = true
+
 // LogLevel values
 const (
 	DebugLevel LogLevel = iota
@@ -54,11 +57,14 @@ type Leveler interface {
 
 var loggerRegister = NewRegister()
 
-// GetLogger return a Logger with name.
-// GetLogger will return nil if there is no Logger with this name
+// GetLogger return a Logger registered with the name,
+// or the root Logger if AutoRoot is true and name is not root, or nil
 func GetLogger(name string) *Logger {
 	if v := loggerRegister.Get(name); v != nil {
 		return v.(*Logger)
+	}
+	if name != "root" {
+		return loggerRegister.Get("root").(*Logger)
 	}
 	return nil
 }
