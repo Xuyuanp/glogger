@@ -102,31 +102,6 @@ func (l *Logger) log(level LogLevel, msg string) {
 	l.Handle(rec)
 }
 
-// Debug function calls default logger's Debug method
-func Debug(f string, v ...interface{}) {
-	Default().Debug(f, v...)
-}
-
-// Info function calls default logger's Info method
-func Info(f string, v ...interface{}) {
-	Default().Info(f, v...)
-}
-
-// Warning function calls default logger's Warning method
-func Warning(f string, v ...interface{}) {
-	Default().Warning(f, v...)
-}
-
-// Error function calls default logger's Error method
-func Error(f string, v ...interface{}) {
-	Default().Error(f, v...)
-}
-
-// Critical function calls default logger's Critical method
-func Critical(f string, v ...interface{}) {
-	Default().Critical(f, v...)
-}
-
 func (l *Logger) run() {
 	for {
 		select {
