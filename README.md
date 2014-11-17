@@ -23,8 +23,8 @@ import (
     )
 
 func main() {
-    glogger.Debug("Hello world!")
-    glogger.Info("Hello world again!")
+    glogger.Default().Debug("Hello world!")
+    glogger.Default().Info("Hello world again!")
 )
 ```
 
