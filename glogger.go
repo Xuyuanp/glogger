@@ -63,7 +63,7 @@ func GetLogger(name string) *Logger {
 	if v := loggerRegister.Get(name); v != nil {
 		return v.(*Logger)
 	}
-	if name != "root" {
+	if AutoRoot && name != "root" {
 		return loggerRegister.Get("root").(*Logger)
 	}
 	return nil
