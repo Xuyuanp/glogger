@@ -18,21 +18,21 @@ package glogger
 
 import "sync"
 
-// register is a thread-safe map
-type register struct {
+// Register is a thread-safe map
+type Register struct {
 	mapper map[string]interface{}
 	mu     sync.RWMutex
 }
 
 // NewRegister returns a new register.
-func NewRegister() *register {
-	return &register{
+func NewRegister() *Register {
+	return &Register{
 		mapper: make(map[string]interface{}),
 	}
 }
 
 // Register binds the interface and the name. If this name has been registerd, it panics.
-func (r *register) Register(name string, v interface{}) {
+func (r *Register) Register(name string, v interface{}) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	if _, dup := r.mapper[name]; dup {
@@ -42,7 +42,7 @@ func (r *register) Register(name string, v interface{}) {
 }
 
 // Unregister unbinds the interface and the name. It returns the interface or nil
-func (r *register) Unregister(name string) interface{} {
+func (r *Register) Unregister(name string) interface{} {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	if v, ok := r.mapper[name]; ok {
@@ -53,7 +53,7 @@ func (r *register) Unregister(name string) interface{} {
 }
 
 // Get return an interface registerd with this name.
-func (r *register) Get(name string) interface{} {
+func (r *Register) Get(name string) interface{} {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 	return r.mapper[name]
