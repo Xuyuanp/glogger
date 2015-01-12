@@ -107,10 +107,10 @@ func (fh *RotatedFileHandler) checkRotated() bool {
 	if !fh.AutoRotated {
 		return false
 	}
-	if fh.MaxLine >= 0 && fh.currentLine >= fh.MaxLine {
+	if fh.MaxLine > 0 && fh.currentLine >= fh.MaxLine {
 		return true
 	}
-	if fh.MaxSize >= 0 && fh.currentSize >= fh.MaxSize {
+	if fh.MaxSize > 0 && fh.currentSize >= fh.MaxSize {
 		return true
 	}
 	if fh.Daily {
