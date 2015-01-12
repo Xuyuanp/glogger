@@ -54,6 +54,8 @@ type RotatedFileHandler struct {
 func NewRotatedFileHandler() *RotatedFileHandler {
 	fh := &RotatedFileHandler{
 		GenericHandler: glogger.NewHandler(),
+		AutoRotated:    true,
+		Daily:          true,
 	}
 	return fh
 }
