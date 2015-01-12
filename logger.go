@@ -111,6 +111,7 @@ func (l *Logger) run() {
 	}
 }
 
+// LoadConfig loads configuration from map.
 func (l *Logger) LoadConfig(config map[string]interface{}) error {
 	// Load log level, default is DebugLevel
 	if blevel, ok := config["level"]; ok {
