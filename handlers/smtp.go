@@ -27,13 +27,13 @@ import (
 )
 
 func init() {
-	glogger.RegisterConfigLoaderBuilder("github.com/Xuyuanp/glogger/handlers.SmtpHandler", func() glogger.ConfigLoader {
-		return NewSmtpHandler()
+	glogger.RegisterConfigLoaderBuilder("github.com/Xuyuanp/glogger/handlers.SMTPHandler", func() glogger.ConfigLoader {
+		return NewSMTPHandler()
 	})
 }
 
-// SmtpHandler struct
-type SmtpHandler struct {
+// SMTPHandler struct
+type SMTPHandler struct {
 	*glogger.GenericHandler
 	Address  string
 	Username string
@@ -42,16 +42,16 @@ type SmtpHandler struct {
 	Subject  string
 }
 
-// NewSmtpHandler return a new SmtpHandler
-func NewSmtpHandler() *SmtpHandler {
-	sh := &SmtpHandler{
+// NewSMTPHandler return a new SmtpHandler
+func NewSMTPHandler() *SMTPHandler {
+	sh := &SMTPHandler{
 		GenericHandler: glogger.NewHandler(),
 	}
 	return sh
 }
 
 // Handle a record
-func (sh *SmtpHandler) Handle(rec *glogger.Record) {
+func (sh *SMTPHandler) Handle(rec *glogger.Record) {
 	text := sh.Format(rec)
 	header := make(map[string]string)
 	header["From"] = sh.Username
@@ -83,7 +83,7 @@ func (sh *SmtpHandler) Handle(rec *glogger.Record) {
 }
 
 // LoadConfig load configuration from a map
-func (sh *SmtpHandler) LoadConfig(config map[string]interface{}) error {
+func (sh *SMTPHandler) LoadConfig(config map[string]interface{}) error {
 	if err := sh.GenericHandler.LoadConfig(config); err != nil {
 		return err
 	}
