@@ -69,12 +69,12 @@ func (fh *RotatedFileHandler) Handle(rec *glogger.Record) {
 		return
 	}
 	msg := fh.Format(rec)
+	fh.currentLine += uint64(len(strings.Split(msg, "\n")))
+	fh.currentSize += uint64(len(msg))
 	if !strings.HasSuffix(msg, "\n") {
 		msg += "\n"
 	}
 	fh.File.WriteString(msg)
-	fh.currentLine += uint64(len(strings.Split(msg, "\n")))
-	fh.currentSize += uint64(len(msg))
 
 	if fh.checkRotated() {
 		fh.doRotated()
