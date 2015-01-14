@@ -160,8 +160,13 @@ func (fh *RotatedFileHandler) LoadConfig(config map[string]interface{}) error {
 	if err := fh.GenericHandler.LoadConfig(config); err != nil {
 		return err
 	}
-	data, _ := json.Marshal(config)
-	json.Unmarshal(data, fh)
+	data, err := json.Marshal(config)
+	if err != nil {
+		return err
+	}
+	if err = json.Unmarshal(data, fh); err != nil {
+		return err
+	}
 	if fh.FileName == "" {
 		return fmt.Errorf("'filename' field is required")
 	}
