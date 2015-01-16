@@ -29,17 +29,17 @@ import (
 )
 
 func init() {
-	glogger.RegisterConfigLoaderBuilder("github.com/Xuyuanp/glogger/handlers.RotatedFileHandler", func() glogger.ConfigLoader {
-		return NewRotatedFileHandler()
+	glogger.RegisterConfigLoaderBuilder("github.com/Xuyuanp/glogger/handlers.RotatingFileHandler", func() glogger.ConfigLoader {
+		return NewRotatingFileHandler()
 	})
 }
 
-// RotatedFileHandler struct
-type RotatedFileHandler struct {
+// RotatingFileHandler struct
+type RotatingFileHandler struct {
 	*glogger.GenericHandler
 	FileName       string
 	File           *os.File
-	AutoRotated    bool
+	AutoRotate     bool
 	MaxSize        uint64
 	MaxLine        uint64
 	Daily          bool
@@ -50,18 +50,18 @@ type RotatedFileHandler struct {
 	mu             sync.Mutex
 }
 
-// NewRotatedFileHandler return a new RotatedFileHandler
-func NewRotatedFileHandler() *RotatedFileHandler {
-	fh := &RotatedFileHandler{
+// NewRotatingFileHandler return a new RotatingFileHandler
+func NewRotatingFileHandler() *RotatingFileHandler {
+	fh := &RotatingFileHandler{
 		GenericHandler: glogger.NewHandler(),
-		AutoRotated:    true,
+		AutoRotate:     true,
 		Daily:          true,
 	}
 	return fh
 }
 
 // Handle a record
-func (fh *RotatedFileHandler) Handle(rec *glogger.Record) {
+func (fh *RotatingFileHandler) Handle(rec *glogger.Record) {
 	fh.mu.Lock()
 	defer fh.mu.Unlock()
 	if fh.File == nil {
@@ -76,20 +76,20 @@ func (fh *RotatedFileHandler) Handle(rec *glogger.Record) {
 	}
 	fh.File.WriteString(msg)
 
-	if fh.checkRotated() {
-		fh.doRotated()
+	if fh.checkRotate() {
+		fh.doRotate()
 	}
 }
 
 // SetFileName set the name of file to output
-func (fh *RotatedFileHandler) SetFileName(fileName string) {
+func (fh *RotatingFileHandler) SetFileName(fileName string) {
 	file, err := os.OpenFile(fileName, os.O_CREATE|os.O_APPEND|os.O_RDWR, 0640)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		return
 	}
 
-	if fh.AutoRotated {
+	if fh.AutoRotate {
 		data, _ := ioutil.ReadAll(file)
 		fh.currentSize = uint64(len(data))
 		fh.currentLine = uint64(len(strings.Split(string(data), "\n"))) - 1
@@ -103,8 +103,8 @@ func (fh *RotatedFileHandler) SetFileName(fileName string) {
 	fh.FileName = fileName
 }
 
-func (fh *RotatedFileHandler) checkRotated() bool {
-	if !fh.AutoRotated {
+func (fh *RotatingFileHandler) checkRotate() bool {
+	if !fh.AutoRotate {
 		return false
 	}
 	if fh.MaxLine > 0 && fh.currentLine >= fh.MaxLine {
@@ -122,7 +122,7 @@ func (fh *RotatedFileHandler) checkRotated() bool {
 	return false
 }
 
-func (fh *RotatedFileHandler) doRotated() {
+func (fh *RotatingFileHandler) doRotate() {
 	nextFileName := ""
 	for i := 1; fh.BackupCount == 0 || i <= fh.BackupCount; i++ {
 		fileName := fmt.Sprintf("%s.%d", fh.FileName, i)
@@ -147,7 +147,7 @@ func (fh *RotatedFileHandler) doRotated() {
 	fh.setupNextRotateTime()
 }
 
-func (fh *RotatedFileHandler) setupNextRotateTime() {
+func (fh *RotatingFileHandler) setupNextRotateTime() {
 	now := time.Now()
 	nextTimeStr := fmt.Sprintf("%d-%d-%d 00:00:00", now.Year(), now.Month(), now.Day())
 	nextTime, _ := time.ParseInLocation("2006-1-2 15:04:05", nextTimeStr, time.Local)
@@ -156,7 +156,7 @@ func (fh *RotatedFileHandler) setupNextRotateTime() {
 }
 
 // LoadConfig load configuration from a map
-func (fh *RotatedFileHandler) LoadConfig(config map[string]interface{}) error {
+func (fh *RotatingFileHandler) LoadConfig(config map[string]interface{}) error {
 	if err := fh.GenericHandler.LoadConfig(config); err != nil {
 		return err
 	}
