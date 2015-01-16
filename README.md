@@ -60,7 +60,7 @@ Config file is written in json format.
     1. `builder`: handler builder name, values:
         * `github.com/Xuyuanp/glogger.StreamHandler`: Output log message into stream. (default)
         * `github.com/Xuyuanp/glogger/handlers.FileHandler`: Output log message into file.
-        * `github.com/Xuyuanp/glogger/handlers.RotatedFileHandler`: Output log message into file and auto-rotated.
+        * `github.com/Xuyuanp/glogger/handlers.RotatingFileHandler`: Output log message into file and auto-rotate.
         * `github.com/Xuyuanp/glogger/handlers.SMTPHandler`: Output log message via SMTP.
     1. `level`: log level, values: (optional)
         * `DEBUG` (default)
@@ -73,11 +73,11 @@ Config file is written in json format.
     4. `writer`: the output stream, for StreamHandler. (optional)
         * `stdout`: standard output (default)
         * `stderr`: standard error
-    5. `filename`: file name, for FileHandler and RotatedFileHandler. (required)
-    6. `autoRotated`: if enable log file auto-rotated. Boolean value, `true` or `false`. For RotatedFileHandler. (optional, `true` as default)
-    7. `maxSize`: max size (byte) of log file. Integer value, 0 means unlimited. For RotatedFileHandler. (optional, `0` as default)
-    8. `maxLine`: max line of log file. Integer value, 0 means unlimited. For RotatedFileHandler. (optional, `0` as default)
-    9. `daily`: if auto-rotate log file daily. Boolean value, `true` or `false`. For RotatedFileHandler. (optional, `true` as default)
+    5. `filename`: file name, for FileHandler and RotatingFileHandler. (required)
+    6. `autoRotate`: if enable log file auto-rotate. Boolean value, `true` or `false`. For RotatingFileHandler. (optional, `true` as default)
+    7. `maxSize`: max size (byte) of log file. Integer value, 0 means unlimited. For RotatingFileHandler. (optional, `0` as default)
+    8. `maxLine`: max line of log file. Integer value, 0 means unlimited. For RotatingFileHandler. (optional, `0` as default)
+    9. `daily`: if auto-rotate log file daily. Boolean value, `true` or `false`. For RotatingFileHandler. (optional, `true` as default)
     10. `address`: email address to send log message from, for SMTPHandler. (required)
     11. `username`: SMTP server username, for SMTPHandler. (required)
     12. `password`: SMTP server password, for SMTPHandler. (required)
