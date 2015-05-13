@@ -141,5 +141,7 @@ func LoadConfigFromFile(fileName string) error {
 	defer file.Close()
 	if code, err := ioutil.ReadAll(file); err == nil {
 		return LoadConfig(code)
+	} else {
+		return err
 	}
 }
