@@ -134,11 +134,12 @@ func LoadConfig(config []byte) error {
 // LoadConfigFromFile read file's content and call the LoadConfig method.
 func LoadConfigFromFile(fileName string) error {
 	var err error
-	if file, err := os.Open(fileName); err == nil {
-		defer file.Close()
-		if code, err := ioutil.ReadAll(file); err == nil {
-			return LoadConfig(code)
-		}
+	var file *os.File
+	if file, err = os.Open(fileName); err != nil {
+		return err
 	}
-	return err
+	defer file.Close()
+	if code, err := ioutil.ReadAll(file); err == nil {
+		return LoadConfig(code)
+	}
 }

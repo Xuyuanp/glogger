@@ -36,7 +36,6 @@ type Logger struct {
 func NewLogger() *Logger {
 	l := &Logger{
 		Level: DebugLevel,
-		ch:    make(chan *Record, 100000),
 	}
 	return l
 }
