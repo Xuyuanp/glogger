@@ -17,9 +17,9 @@
 package handlers
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strings"
 	"sync"
@@ -83,22 +83,28 @@ func (fh *RotatingFileHandler) Handle(rec *glogger.Record) {
 
 // SetFileName set the name of file to output
 func (fh *RotatingFileHandler) SetFileName(fileName string) {
-	file, err := os.OpenFile(fileName, os.O_CREATE|os.O_APPEND|os.O_RDWR, 0640)
+	file, err := os.OpenFile(fileName, os.O_CREATE|os.O_RDWR, 0640)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		return
 	}
 
 	if fh.AutoRotate {
-		data, _ := ioutil.ReadAll(file)
-		fh.currentSize = uint64(len(data))
-		fh.currentLine = uint64(len(strings.Split(string(data), "\n"))) - 1
+		fh.currentSize = 0
+		fh.currentLine = 0
+		scanner := bufio.NewScanner(file)
+		for scanner.Scan() {
+			line := scanner.Text()
+			fh.currentSize += uint64(len(line))
+			fh.currentLine++
+		}
 		fh.setupNextRotateTime()
 	}
 
 	if fh.File != nil {
 		fh.File.Close()
 	}
+
 	fh.File = file
 	fh.FileName = fileName
 }
