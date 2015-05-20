@@ -83,7 +83,7 @@ func (fh *RotatingFileHandler) Handle(rec *glogger.Record) {
 
 // SetFileName set the name of file to output
 func (fh *RotatingFileHandler) SetFileName(fileName string) {
-	file, err := os.OpenFile(fileName, os.O_CREATE|os.O_RDWR, 0640)
+	file, err := os.OpenFile(fileName, os.O_CREATE|os.O_RDWR|os.O_APPEND, 0640)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		return
