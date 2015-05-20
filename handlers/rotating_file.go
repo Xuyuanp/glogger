@@ -82,7 +82,7 @@ func (fh *RotatingFileHandler) Handle(rec *glogger.Record) {
 }
 
 // SetFileName set the name of file to output
-func (fh *RotatingFileHandler) SetFileName(fileName string) {
+func (fh *RotatingFileHandler) setFileName(fileName string) {
 	file, err := os.OpenFile(fileName, os.O_CREATE|os.O_RDWR|os.O_APPEND, 0640)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
@@ -147,7 +147,7 @@ func (fh *RotatingFileHandler) doRotate() {
 	fh.File = nil
 	os.Rename(fh.FileName, nextFileName)
 
-	fh.SetFileName(fh.FileName)
+	fh.setFileName(fh.FileName)
 	fh.currentLine = 0
 	fh.currentSize = 0
 	fh.setupNextRotateTime()
@@ -176,6 +176,6 @@ func (fh *RotatingFileHandler) LoadConfig(config map[string]interface{}) error {
 	if fh.FileName == "" {
 		return fmt.Errorf("'filename' field is required")
 	}
-	fh.SetFileName(fh.FileName)
+	fh.setFileName(fh.FileName)
 	return nil
 }
