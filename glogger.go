@@ -16,6 +16,8 @@
 
 package glogger
 
+import "fmt"
+
 // LogLevel type
 type LogLevel uint8
 
@@ -30,6 +32,13 @@ const (
 	ErrorLevel
 	CriticalLevel
 )
+
+func (level LogLevel) String() string {
+	if str, ok := LevelToString[level]; ok {
+		return str
+	}
+	return fmt.Sprintf("unknow LogLeve(%d)", level)
+}
 
 // LevelToString is a map to translate LogLevel to a level name string
 var LevelToString = map[LogLevel]string{
