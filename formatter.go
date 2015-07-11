@@ -20,7 +20,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"regexp"
-	"strings"
 )
 
 // Formatter interface
@@ -76,31 +75,30 @@ var FieldHolderRegexp = regexp.MustCompile(`\$\{\w+\}`)
 
 // Format formats a record to string
 func (df *DefaultFormatter) Format(rec *Record) string {
-	args := []interface{}{}
-	newFmt := df.Fmt
-	fieldMap := map[string]interface{}{
-		"name":      rec.Name,
-		"time":      rec.Time.Format(df.TimeFmt),
-		"levelno":   rec.Level,
-		"levelname": LevelToString[rec.Level],
-		"lfile":     rec.LFile,
-		"sfile":     rec.SFile,
-		"func":      rec.Func,
-		"line":      rec.Line,
-		"msg":       rec.Message,
-	}
-	newFmt = strings.Replace(newFmt, "%", "%%", -1)
-	newFmt = FieldHolderRegexp.ReplaceAllStringFunc(newFmt, func(match string) string {
+	return FieldHolderRegexp.ReplaceAllStringFunc(df.Fmt, func(match string) string {
 		fieldName := match[2 : len(match)-1]
-		field, ok := fieldMap[fieldName]
-		if ok {
-			args = append(args, field)
-			return "%v"
+		switch fieldName {
+		case "name":
+			return rec.Name
+		case "time":
+			return rec.Time.Format(df.TimeFmt)
+		case "levelno":
+			return fmt.Sprintf("%d", rec.Level)
+		case "levelname":
+			return rec.Level.String()
+		case "lfile":
+			return rec.LFile
+		case "sfile":
+			return rec.SFile
+		case "func":
+			return rec.Func
+		case "line":
+			return fmt.Sprintf("%d", rec.Line)
+		case "msg":
+			return rec.Message
 		}
 		return match
 	})
-
-	return fmt.Sprintf(newFmt, args...)
 }
 
 // LoadConfigJSON load configuration from json
